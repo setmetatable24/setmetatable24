@@ -1,0 +1,4483 @@
+--!strict
+
+local MathUtils = {}
+
+type Plane = { normal: Vector3, d: number }
+type Contact = { depth: number? }
+
+local EPSILON = 1e-6
+local HALF_PI = math.pi / 2
+local TWO_PI = math.pi * 2
+local DEG_TO_RAD = math.pi / 180
+local RAD_TO_DEG = 180 / math.pi
+
+MathUtils.EPSILON = EPSILON
+MathUtils.HALF_PI = HALF_PI
+MathUtils.PI = math.pi
+MathUtils.TWO_PI = TWO_PI
+MathUtils.DEG_TO_RAD = DEG_TO_RAD
+MathUtils.RAD_TO_DEG = RAD_TO_DEG
+MathUtils.FLOAT_MAX = math.huge
+MathUtils.FLOAT_MIN = 2.2250738585072014e-308
+
+local function invSqrt(x: number): number
+	if x <= EPSILON then
+		return 0
+	end
+	return 1 / math.sqrt(x)
+end
+
+local function cubeRoot(x: number): number
+	if x < 0 then
+		return -((-x) ^ (1 / 3))
+	end
+	return x ^ (1 / 3)
+end
+
+function MathUtils.matrixToQuaternion(cf: CFrame): (number, number, number, number)
+	local right = cf.RightVector
+	local up = cf.UpVector
+	local back = -cf.LookVector
+	local m00, m01, m02 = right.X, up.X, back.X
+	local m10, m11, m12 = right.Y, up.Y, back.Y
+	local m20, m21, m22 = right.Z, up.Z, back.Z
+	local trace = m00 + m11 + m22
+	local qw = 0
+	local qx = 0
+	local qy = 0
+	local qz = 0
+
+	if trace > 0 then
+		local s = 0.5 / math.sqrt(trace + 1)
+		qw = 0.25 / s
+		qx = (m21 - m12) * s
+		qy = (m02 - m20) * s
+		qz = (m10 - m01) * s
+	elseif m00 > m11 and m00 > m22 then
+		local s = 2 * math.sqrt(1 + m00 - m11 - m22)
+		qw = (m21 - m12) / s
+		qx = 0.25 * s
+		qy = (m01 + m10) / s
+		qz = (m02 + m20) / s
+	elseif m11 > m22 then
+		local s = 2 * math.sqrt(1 + m11 - m00 - m22)
+		qw = (m02 - m20) / s
+		qx = (m01 + m10) / s
+		qy = 0.25 * s
+		qz = (m12 + m21) / s
+	else
+		local s = 2 * math.sqrt(1 + m22 - m00 - m11)
+		qw = (m10 - m01) / s
+		qx = (m02 + m20) / s
+		qy = (m12 + m21) / s
+		qz = 0.25 * s
+	end
+
+	return qx, qy, qz, qw
+end
+
+function MathUtils.quaternionToCFrame(
+	px: number, py: number, pz: number,
+	qx: number, qy: number, qz: number, qw: number
+): CFrame
+	local xx, yy, zz = qx * qx, qy * qy, qz * qz
+	local xy, xz, xw = qx * qy, qx * qz, qx * qw
+	local yz, yw, zw = qy * qz, qy * qw, qz * qw
+
+	return CFrame.new(
+		px, py, pz,
+		1 - 2 * (yy + zz),
+		2 * (xy - zw),
+		2 * (xz + yw),
+		2 * (xy + zw),
+		1 - 2 * (xx + zz),
+		2 * (yz - xw),
+		2 * (xz - yw),
+		2 * (yz + xw),
+		1 - 2 * (xx + yy)
+	)
+end
+
+function MathUtils.quaternionMultiply(
+	qx1: number, qy1: number, qz1: number, qw1: number,
+	qx2: number, qy2: number, qz2: number, qw2: number
+): (number, number, number, number)
+	local x = qw1 * qx2 + qx1 * qw2 + qy1 * qz2 - qz1 * qy2
+	local y = qw1 * qy2 - qx1 * qz2 + qy1 * qw2 + qz1 * qx2
+	local z = qw1 * qz2 + qx1 * qy2 - qy1 * qx2 + qz1 * qw2
+	local w = qw1 * qw2 - qx1 * qx2 - qy1 * qy2 - qz1 * qz2
+	return x, y, z, w
+end
+
+function MathUtils.quaternionSlerp(
+	qx1: number, qy1: number, qz1: number, qw1: number,
+	qx2: number, qy2: number, qz2: number, qw2: number,
+	t: number
+): (number, number, number, number)
+	local dot = qx1 * qx2 + qy1 * qy2 + qz1 * qz2 + qw1 * qw2
+	local flip = false
+
+	if dot < 0 then
+		dot = -dot
+		flip = true
+	end
+
+	if dot > 0.99995 then
+		local x = qx1 + t * (qx2 - qx1)
+		local y = qy1 + t * (qy2 - qy1)
+		local z = qz1 + t * (qz2 - qz1)
+		local w = qw1 + t * (qw2 - qw1)
+		local norm = invSqrt(x * x + y * y + z * z + w * w)
+		return x * norm, y * norm, z * norm, w * norm
+	end
+
+	local theta0 = math.acos(dot)
+	local theta = theta0 * t
+	local sinTheta0 = math.sin(theta0)
+	local sinTheta = math.sin(theta)
+	local s0 = math.cos(theta) - dot * sinTheta / sinTheta0
+	local s1 = sinTheta / sinTheta0
+
+	if flip then
+		s1 = -s1
+	end
+
+	local x = s0 * qx1 + s1 * qx2
+	local y = s0 * qy1 + s1 * qy2
+	local z = s0 * qz1 + s1 * qz2
+	local w = s0 * qw1 + s1 * qw2
+	return x, y, z, w
+end
+
+function MathUtils.angleAxisToQuaternion(
+	angle: number,
+	ax: number, ay: number, az: number
+): (number, number, number, number)
+	local magSq = ax * ax + ay * ay + az * az
+
+	if magSq < EPSILON then
+		return 0, 0, 0, 1
+	end
+
+	local halfAngle = angle * 0.5
+	local s, c = math.sin(halfAngle), math.cos(halfAngle)
+	local scale = s / math.sqrt(magSq)
+
+	local x = ax * scale
+	local y = ay * scale
+	local z = az * scale
+	return x, y, z, c
+end
+
+function MathUtils.quaternionToAngleAxis(
+	qx: number, qy: number, qz: number, qw: number
+): (number, number, number, number)
+	local angle = 2 * math.acos(math.min(1, math.max(-1, qw)))
+	local sinHalf = math.sqrt(1 - qw * qw)
+
+	if sinHalf < EPSILON then
+		return 0, 1, 0, 0
+	end
+
+	local scale = 1 / sinHalf
+	return angle, qx * scale, qy * scale, qz * scale
+end
+
+function MathUtils.rotateVector(
+	vx: number, vy: number, vz: number,
+	qx: number, qy: number, qz: number, qw: number
+): (number, number, number)
+	local tx = 2 * (qy * vz - qz * vy)
+	local ty = 2 * (qz * vx - qx * vz)
+	local tz = 2 * (qx * vy - qy * vx)
+	local rx = vx + qw * tx + (qy * tz - qz * ty)
+	local ry = vy + qw * ty + (qz * tx - qx * tz)
+	local rz = vz + qw * tz + (qx * ty - qy * tx)
+	return rx, ry, rz
+end
+
+function MathUtils.quaternionLookAt(
+	dirX: number, dirY: number, dirZ: number,
+	upX: number, upY: number, upZ: number
+): (number, number, number, number)
+	local dirLenSq = dirX * dirX + dirY * dirY + dirZ * dirZ
+
+	if dirLenSq < EPSILON then
+		return 0, 0, 0, 1
+	end
+
+	local invDirLen = invSqrt(dirLenSq)
+	local fwdX, fwdY, fwdZ = dirX * invDirLen, dirY * invDirLen, dirZ * invDirLen
+
+	local upLenSq = upX * upX + upY * upY + upZ * upZ
+	if upLenSq < EPSILON then
+		upX, upY, upZ = 0, 1, 0
+	else
+		local invUpLen = invSqrt(upLenSq)
+		upX, upY, upZ = upX * invUpLen, upY * invUpLen, upZ * invUpLen
+	end
+
+	local rightX = fwdY * upZ - fwdZ * upY
+	local rightY = fwdZ * upX - fwdX * upZ
+	local rightZ = fwdX * upY - fwdY * upX
+
+	local rightLenSq = rightX * rightX + rightY * rightY + rightZ * rightZ
+	if rightLenSq < EPSILON then
+		return 0, 0, 0, 1
+	end
+
+	local invRightLen = invSqrt(rightLenSq)
+	rightX, rightY, rightZ = rightX * invRightLen, rightY * invRightLen, rightZ * invRightLen
+
+	local uX = rightY * fwdZ - rightZ * fwdY
+	local uY = rightZ * fwdX - rightX * fwdZ
+	local uZ = rightX * fwdY - rightY * fwdX
+
+	local trace = rightX + uY + fwdZ + 1
+
+	if trace > EPSILON then
+		local s = 0.5 / math.sqrt(trace)
+		local qx = (uZ - fwdY) * s
+		local qy = (fwdX - rightZ) * s
+		local qz = (rightY - uX) * s
+		local qw = 0.25 / s
+		return qx, qy, qz, qw
+	elseif rightX > uY and rightX > fwdZ then
+		local s = 2 * math.sqrt(1 + rightX - uY - fwdZ)
+		local qx = 0.25 * s
+		local qy = (rightY + uX) / s
+		local qz = (rightZ + fwdX) / s
+		local qw = (uZ - fwdY) / s
+		return qx, qy, qz, qw
+	elseif uY > fwdZ then
+		local s = 2 * math.sqrt(1 + uY - rightX - fwdZ)
+		local qx = (rightY + uX) / s
+		local qy = 0.25 * s
+		local qz = (uZ + fwdY) / s
+		local qw = (fwdX - rightZ) / s
+		return qx, qy, qz, qw
+	else
+		local s = 2 * math.sqrt(1 + fwdZ - rightX - uY)
+		local qx = (rightZ + fwdX) / s
+		local qy = (uZ + fwdY) / s
+		local qz = 0.25 * s
+		local qw = (rightY - uX) / s
+		return qx, qy, qz, qw
+	end
+end
+
+function MathUtils.createCFrameInterpolator(from: CFrame, to: CFrame): (t: number) -> CFrame
+	local px1, py1, pz1 = from.Position.X, from.Position.Y, from.Position.Z
+	local px2, py2, pz2 = to.Position.X, to.Position.Y, to.Position.Z
+	local qx1, qy1, qz1, qw1 = MathUtils.matrixToQuaternion(from)
+	local qx2, qy2, qz2, qw2 = MathUtils.matrixToQuaternion(to)
+
+	local dx, dy, dz = px2 - px1, py2 - py1, pz2 - pz1
+	local dot = qx1 * qx2 + qy1 * qy2 + qz1 * qz2 + qw1 * qw2
+	local useSlerp = math.abs(dot) <= 0.99995
+
+	if useSlerp then
+		return function(t: number): CFrame
+			t = t > 1 and 1 or t < 0 and 0 or t
+			local x, y, z, w = MathUtils.quaternionSlerp(
+				qx1, qy1, qz1, qw1,
+				qx2, qy2, qz2, qw2,
+				t
+			)
+			local cf = MathUtils.quaternionToCFrame(
+				px1 + t * dx, py1 + t * dy, pz1 + t * dz,
+				x, y, z, w
+			)
+			return cf
+		end
+	else
+		return function(t: number): CFrame
+			t = t > 1 and 1 or t < 0 and 0 or t
+			return CFrame.new(px1 + t * dx, py1 + t * dy, pz1 + t * dz):Lerp(to, t)
+		end
+	end
+end
+
+function MathUtils.createSplineInterpolator(
+	points: { CFrame },
+	times: { number }?
+): (t: number) -> CFrame
+	local n = #points
+	if n < 2 then
+		local single = points[1] or CFrame.new()
+		return function(t: number): CFrame
+			return single
+		end
+	end
+
+	local segments = {}
+	for i = 1, n - 1 do
+		local p0 = points[i]
+		local p1 = points[i + 1]
+		local t0 = (times and times[i]) or (i - 1) / (n - 1)
+		local t1 = (times and times[i + 1]) or i / (n - 1)
+
+		local interp = MathUtils.createCFrameInterpolator(p0, p1)
+		segments[i] = {
+			start = t0,
+			finish = t1,
+			interp = interp
+		}
+	end
+
+	return function(t: number): CFrame
+		t = t > 1 and 1 or t < 0 and 0 or t
+		for _, seg in ipairs(segments) do
+			if t >= seg.start and t <= seg.finish then
+				local segT = (t - seg.start) / (seg.finish - seg.start)
+				return seg.interp(segT)
+			end
+		end
+		return t <= 0.5 and points[1] or points[n]
+	end
+end
+
+function MathUtils.exponentialSmooth(
+	current: number,
+	target: number,
+	smoothness: number,
+	dt: number
+): number
+	local alpha = 1 - math.exp(-math.max(smoothness, 0) * math.max(dt, 0))
+	return current + (target - current) * alpha
+end
+
+function MathUtils.springDamp(
+	current: number,
+	target: number,
+	velocity: number,
+	stiffness: number,
+	damping: number,
+	dt: number
+): (number, number)
+	local safeDt = math.max(dt, 0)
+	local safeStiffness = math.max(stiffness, 0)
+	local safeDamping = math.max(damping, 0)
+	if safeDt <= 0 then
+		return current, velocity
+	end
+	if safeStiffness <= EPSILON then
+		local decay = math.exp(-safeDamping * safeDt)
+		local newVelocity = velocity * decay
+		return current + newVelocity * safeDt, newVelocity
+	end
+	local omega = math.sqrt(safeStiffness)
+	local zeta = safeDamping / (2 * omega)
+	local x = current - target
+	if math.abs(zeta - 1) <= 0.0001 then
+		return MathUtils.criticallyDampedSpring(current, target, velocity, omega, safeDt)
+	elseif zeta < 1 then
+		local dampedOmega = omega * math.sqrt(math.max(1 - zeta * zeta, EPSILON))
+		local expTerm = math.exp(-zeta * omega * safeDt)
+		local cosTerm = math.cos(dampedOmega * safeDt)
+		local sinTerm = math.sin(dampedOmega * safeDt)
+		local b = (velocity + zeta * omega * x) / dampedOmega
+		local newX = expTerm * (x * cosTerm + b * sinTerm)
+		local newVelocity = expTerm * ((b * dampedOmega - zeta * omega * x) * cosTerm + (-x * dampedOmega - zeta * omega * b) * sinTerm)
+		return target + newX, newVelocity
+	end
+	local root = math.sqrt(zeta * zeta - 1)
+	local r1 = -omega * (zeta - root)
+	local r2 = -omega * (zeta + root)
+	local c1 = (velocity - r2 * x) / math.max(r1 - r2, EPSILON)
+	local c2 = x - c1
+	local e1 = math.exp(r1 * safeDt)
+	local e2 = math.exp(r2 * safeDt)
+	local newX = c1 * e1 + c2 * e2
+	local newVelocity = c1 * r1 * e1 + c2 * r2 * e2
+	return target + newX, newVelocity
+end
+
+function MathUtils.criticallyDampedSpring(
+	current: number,
+	target: number,
+	velocity: number,
+	omega: number,
+	dt: number
+): (number, number)
+	local safeOmega = math.max(omega, EPSILON)
+	local safeDt = math.max(dt, 0)
+	local x = current - target
+	local c = velocity + safeOmega * x
+	local expTerm = math.exp(-safeOmega * safeDt)
+	local newX = (x + c * safeDt) * expTerm
+	local newVelocity = (c - safeOmega * (x + c * safeDt)) * expTerm
+	return target + newX, newVelocity
+end
+
+function MathUtils.criticallyDampedSpringFromStiffness(
+	current: number,
+	target: number,
+	velocity: number,
+	stiffness: number,
+	dt: number
+): (number, number)
+	return MathUtils.criticallyDampedSpring(current, target, velocity, math.sqrt(math.max(stiffness, EPSILON)), dt)
+end
+
+function MathUtils.smoothDamp(
+	current: number,
+	target: number,
+	velocity: number,
+	smoothTime: number,
+	dt: number,
+	maxSpeed: number?
+): (number, number)
+	smoothTime = math.max(0.0001, smoothTime)
+	local omega = 2 / smoothTime
+	local x = omega * dt
+	local exp = 1 / (1 + x + 0.48 * x * x + 0.235 * x * x * x)
+
+	local change = current - target
+	local originalTarget = target
+
+	if maxSpeed then
+		local maxChange = maxSpeed * smoothTime
+		change = math.min(maxChange, math.max(-maxChange, change))
+		target = current - change
+	end
+
+	local temp = (velocity + omega * change) * dt
+	velocity = (velocity - omega * temp) * exp
+	local newPos = target + (change + temp) * exp
+
+	local targetDirectionPositive = (originalTarget - current) > 0
+	local outputPastTarget = (newPos - originalTarget) > 0
+	if targetDirectionPositive == outputPastTarget then
+		newPos = originalTarget
+		velocity = 0
+	end
+
+	return newPos, velocity
+end
+
+function MathUtils.normalizeAngle(angle: number): number
+	return angle - TWO_PI * math.floor((angle + math.pi) / TWO_PI)
+end
+
+function MathUtils.angleDifference(a: number, b: number): number
+	local diff = (a - b) % TWO_PI
+	if diff > math.pi then
+		diff = diff - TWO_PI
+	end
+	return diff
+end
+
+function MathUtils.smoothDampAngle(
+	current: number,
+	target: number,
+	velocity: number,
+	smoothTime: number,
+	dt: number,
+	maxSpeed: number?
+): (number, number)
+	local radDiff = MathUtils.angleDifference(target, current)
+	local newTarget = current + radDiff
+	local newPos, newVel = MathUtils.smoothDamp(
+		current, newTarget, velocity, smoothTime, dt, maxSpeed
+	)
+	return MathUtils.normalizeAngle(newPos), newVel
+end
+
+function MathUtils.scalarClamp01(value: number): number
+	return math.clamp(value, 0, 1)
+end
+
+function MathUtils.scalarClampSigned(value: number): number
+	return math.clamp(value, -1, 1)
+end
+
+function MathUtils.scalarSquare(value: number): number
+	return value * value
+end
+
+function MathUtils.scalarCube(value: number): number
+	return value * value * value
+end
+
+function MathUtils.scalarQuartic(value: number): number
+	local squared = value * value
+	return squared * squared
+end
+
+function MathUtils.scalarSignedSquare(value: number): number
+	if value < 0 then
+		return -(value * value)
+	end
+	return value * value
+end
+
+function MathUtils.scalarSafeDivide(numerator: number, denominator: number, fallback: number?): number
+	if math.abs(denominator) < EPSILON then
+		return fallback or 0
+	end
+	return numerator / denominator
+end
+
+function MathUtils.scalarSafeSqrt(value: number): number
+	return math.sqrt(math.max(value, 0))
+end
+
+function MathUtils.scalarSafeLog(value: number, fallback: number?): number
+	if value <= 0 then
+		return fallback or 0
+	end
+	return math.log(value)
+end
+
+function MathUtils.scalarSafeAcos(value: number): number
+	return math.acos(math.clamp(value, -1, 1))
+end
+
+function MathUtils.scalarSafeAsin(value: number): number
+	return math.asin(math.clamp(value, -1, 1))
+end
+
+function MathUtils.scalarWrap01(value: number): number
+	local wrapped = value - math.floor(value)
+	return wrapped
+end
+
+function MathUtils.scalarWrap(value: number, minValue: number, maxValue: number): number
+	local range = maxValue - minValue
+	if math.abs(range) < EPSILON then
+		return minValue
+	end
+	return ((value - minValue) % range) + minValue
+end
+
+function MathUtils.scalarPingPong(value: number, length: number): number
+	local safeLength = math.max(math.abs(length), EPSILON)
+	local t = value % (safeLength * 2)
+	if t > safeLength then
+		return safeLength * 2 - t
+	end
+	return t
+end
+
+function MathUtils.scalarPingPong01(value: number): number
+	local t = value % 2
+	if t > 1 then
+		return 2 - t
+	end
+	return t
+end
+
+function MathUtils.scalarMoveTowards(current: number, target: number, maxDelta: number): number
+	local delta = target - current
+	local step = math.abs(maxDelta)
+	if math.abs(delta) <= step then
+		return target
+	end
+	return current + math.sign(delta) * step
+end
+
+function MathUtils.scalarExpDecayAlpha(decay: number, dt: number): number
+	local safeDecay = math.max(decay, 0)
+	local safeDt = math.max(dt, 0)
+	return 1 - math.exp(-safeDecay * safeDt)
+end
+
+function MathUtils.scalarHalfLifeAlpha(halfLife: number, dt: number): number
+	local safeHalfLife = math.max(halfLife, EPSILON)
+	local safeDt = math.max(dt, 0)
+	return 1 - 2 ^ (-safeDt / safeHalfLife)
+end
+
+function MathUtils.scalarDamp(current: number, target: number, decay: number, dt: number): number
+	local alpha = MathUtils.scalarExpDecayAlpha(decay, dt)
+	return current + (target - current) * alpha
+end
+
+function MathUtils.scalarHalfLifeDamp(current: number, target: number, halfLife: number, dt: number): number
+	local alpha = MathUtils.scalarHalfLifeAlpha(halfLife, dt)
+	return current + (target - current) * alpha
+end
+
+function MathUtils.scalarDeadZone(value: number, deadZone: number): number
+	local threshold = math.abs(deadZone)
+	if math.abs(value) <= threshold then
+		return 0
+	end
+	return value - math.sign(value) * threshold
+end
+
+function MathUtils.scalarNormalizeDeadZone(value: number, deadZone: number, maxValue: number): number
+	local raw = MathUtils.scalarDeadZone(value, deadZone)
+	local range = math.max(math.abs(maxValue) - math.abs(deadZone), EPSILON)
+	return math.clamp(raw / range, -1, 1)
+end
+
+function MathUtils.scalarQuantize(value: number, step: number): number
+	local safeStep = math.max(math.abs(step), EPSILON)
+	return math.floor(value / safeStep + 0.5) * safeStep
+end
+
+function MathUtils.scalarRoundTo(value: number, decimals: number): number
+	local power = 10 ^ math.max(0, math.floor(decimals))
+	return math.floor(value * power + 0.5) / power
+end
+
+function MathUtils.scalarApproximately(a: number, b: number, tolerance: number?): boolean
+	local threshold = tolerance or EPSILON
+	return math.abs(a - b) <= threshold
+end
+
+function MathUtils.scalarBetween(value: number, minValue: number, maxValue: number, inclusive: boolean?): boolean
+	if inclusive == false then
+		return value > minValue and value < maxValue
+	end
+	return value >= minValue and value <= maxValue
+end
+
+function MathUtils.scalarInverseSafe(value: number, fallback: number?): number
+	if math.abs(value) < EPSILON then
+		return fallback or 0
+	end
+	return 1 / value
+end
+
+function MathUtils.scalarRcpSqrtSafe(value: number, fallback: number?): number
+	if value <= EPSILON then
+		return fallback or 0
+	end
+	return 1 / math.sqrt(value)
+end
+
+function MathUtils.scalarNormalizeDegrees(angle: number): number
+	local result = angle % 360
+	if result < 0 then
+		result += 360
+	end
+	return result
+end
+
+function MathUtils.scalarShortestDeltaDegrees(fromAngle: number, toAngle: number): number
+	return (toAngle - fromAngle + 180) % 360 - 180
+end
+
+function MathUtils.scalarLerpAngleDegrees(fromAngle: number, toAngle: number, alpha: number): number
+	local delta = MathUtils.scalarShortestDeltaDegrees(fromAngle, toAngle)
+	return MathUtils.scalarNormalizeDegrees(fromAngle + delta * math.clamp(alpha, 0, 1))
+end
+
+function MathUtils.scalarDampAngleDegrees(current: number, target: number, decay: number, dt: number): number
+	local delta = MathUtils.scalarShortestDeltaDegrees(current, target)
+	local alpha = MathUtils.scalarExpDecayAlpha(decay, dt)
+	return MathUtils.scalarNormalizeDegrees(current + delta * alpha)
+end
+
+function MathUtils.scalarMedian3(a: number, b: number, c: number): number
+	local low = math.min(a, b)
+	local high = math.max(a, b)
+	return math.max(low, math.min(high, c))
+end
+
+function MathUtils.scalarSmoothPulse(edge0: number, edge1: number, edge2: number, edge3: number, value: number): number
+	local a = math.clamp((value - edge0) / math.max(edge1 - edge0, EPSILON), 0, 1)
+	local b = math.clamp((value - edge2) / math.max(edge3 - edge2, EPSILON), 0, 1)
+	return math.clamp((a * a * (3 - 2 * a)) - (b * b * (3 - 2 * b)), 0, 1)
+end
+
+function MathUtils.scalarBell01(value: number): number
+	local x = math.clamp(value, 0, 1)
+	return math.sin(x * math.pi)
+end
+
+function MathUtils.scalarParabola01(value: number, power: number): number
+	local x = math.clamp(value, 0, 1)
+	return (4 * x * (1 - x)) ^ math.max(power, 0)
+end
+
+function MathUtils.scalarBias(value: number, bias: number): number
+	local x = math.clamp(value, 0, 1)
+	local b = math.clamp(bias, EPSILON, 1 - EPSILON)
+	return x / (((1 / b) - 2) * (1 - x) + 1)
+end
+
+function MathUtils.scalarGain(value: number, gain: number): number
+	local x = math.clamp(value, 0, 1)
+	local g = math.max(gain, EPSILON)
+	if x < 0.5 then
+		return 0.5 * ((2 * x) ^ g)
+	end
+	return 1 - 0.5 * ((2 - 2 * x) ^ g)
+end
+
+function MathUtils.scalarLogistic(value: number, steepness: number): number
+	return 1 / (1 + math.exp(-value * steepness))
+end
+
+function MathUtils.scalarSoftplus(value: number, sharpness: number?): number
+	local k = sharpness or 1
+	return math.log(1 + math.exp(value * k)) / math.max(k, EPSILON)
+end
+
+function MathUtils.easeIn2(value: number): number
+	local x = math.clamp(value, 0, 1)
+	return x * x
+end
+
+function MathUtils.easeOut2(value: number): number
+	local x = 1 - math.clamp(value, 0, 1)
+	return 1 - x * x
+end
+
+function MathUtils.easeInOut2(value: number): number
+	local x = math.clamp(value, 0, 1)
+	if x < 0.5 then
+		return 2 * x * x
+	end
+	return 1 - ((-2 * x + 2) ^ 2) * 0.5
+end
+
+function MathUtils.easeIn3(value: number): number
+	local x = math.clamp(value, 0, 1)
+	return x * x * x
+end
+
+function MathUtils.easeOut3(value: number): number
+	local x = 1 - math.clamp(value, 0, 1)
+	return 1 - x * x * x
+end
+
+function MathUtils.easeInOut3(value: number): number
+	local x = math.clamp(value, 0, 1)
+	if x < 0.5 then
+		return 4 * x * x * x
+	end
+	return 1 - ((-2 * x + 2) ^ 3) * 0.5
+end
+
+function MathUtils.easeIn4(value: number): number
+	local x = math.clamp(value, 0, 1)
+	return x ^ 4
+end
+
+function MathUtils.easeOut4(value: number): number
+	local x = 1 - math.clamp(value, 0, 1)
+	return 1 - x ^ 4
+end
+
+function MathUtils.easeInOut4(value: number): number
+	local x = math.clamp(value, 0, 1)
+	if x < 0.5 then
+		return 8 * x ^ 4
+	end
+	return 1 - ((-2 * x + 2) ^ 4) * 0.5
+end
+
+function MathUtils.easeIn5(value: number): number
+	local x = math.clamp(value, 0, 1)
+	return x ^ 5
+end
+
+function MathUtils.easeOut5(value: number): number
+	local x = 1 - math.clamp(value, 0, 1)
+	return 1 - x ^ 5
+end
+
+function MathUtils.easeInOut5(value: number): number
+	local x = math.clamp(value, 0, 1)
+	if x < 0.5 then
+		return 16 * x ^ 5
+	end
+	return 1 - ((-2 * x + 2) ^ 5) * 0.5
+end
+
+function MathUtils.vector2Abs(value: Vector2): Vector2
+	return Vector2.new(math.abs(value.X), math.abs(value.Y))
+end
+
+function MathUtils.vector2Sign(value: Vector2): Vector2
+	return Vector2.new(math.sign(value.X), math.sign(value.Y))
+end
+
+function MathUtils.vector2Floor(value: Vector2): Vector2
+	return Vector2.new(math.floor(value.X), math.floor(value.Y))
+end
+
+function MathUtils.vector2Ceil(value: Vector2): Vector2
+	return Vector2.new(math.ceil(value.X), math.ceil(value.Y))
+end
+
+function MathUtils.vector2Round(value: Vector2): Vector2
+	return Vector2.new(math.floor(value.X + 0.5), math.floor(value.Y + 0.5))
+end
+
+function MathUtils.vector2Clamp(value: Vector2, minValue: Vector2, maxValue: Vector2): Vector2
+	return Vector2.new(math.clamp(value.X, minValue.X, maxValue.X), math.clamp(value.Y, minValue.Y, maxValue.Y))
+end
+
+function MathUtils.vector2ClampMagnitude(value: Vector2, maxMagnitude: number): Vector2
+	local magnitude = value.Magnitude
+	local limit = math.max(maxMagnitude, 0)
+	if magnitude > limit and magnitude > EPSILON then
+		return value / magnitude * limit
+	end
+	return value
+end
+
+function MathUtils.vector2MoveTowards(current: Vector2, target: Vector2, maxDistance: number): Vector2
+	local delta = target - current
+	local magnitude = delta.Magnitude
+	local step = math.max(maxDistance, 0)
+	if magnitude <= step or magnitude < EPSILON then
+		return target
+	end
+	return current + delta / magnitude * step
+end
+
+function MathUtils.vector2WithMagnitude(direction: Vector2, magnitude: number, fallback: Vector2?): Vector2
+	local base = direction
+	if base.Magnitude < EPSILON then
+		base = fallback or Vector2.new(1, 0)
+	end
+	return base.Unit * magnitude
+end
+
+function MathUtils.vector2Perpendicular(value: Vector2): Vector2
+	return Vector2.new(-value.Y, value.X)
+end
+
+function MathUtils.vector2Cross(a: Vector2, b: Vector2): number
+	return a.X * b.Y - a.Y * b.X
+end
+
+function MathUtils.vector2Rotate(value: Vector2, angle: number): Vector2
+	local c = math.cos(angle)
+	local s = math.sin(angle)
+	return Vector2.new(value.X * c - value.Y * s, value.X * s + value.Y * c)
+end
+
+function MathUtils.vector2FromAngle(angle: number, magnitude: number?): Vector2
+	local m = magnitude or 1
+	return Vector2.new(math.cos(angle) * m, math.sin(angle) * m)
+end
+
+function MathUtils.vector2Angle(value: Vector2): number
+	return math.atan2(value.Y, value.X)
+end
+
+function MathUtils.vector2Project(value: Vector2, normal: Vector2): Vector2
+	local n = if normal.Magnitude < EPSILON then Vector2.new(1, 0) else normal.Unit
+	return n * value:Dot(n)
+end
+
+function MathUtils.vector2Reject(value: Vector2, normal: Vector2): Vector2
+	return value - MathUtils.vector2Project(value, normal)
+end
+
+function MathUtils.vector2Reflect(value: Vector2, normal: Vector2): Vector2
+	local n = if normal.Magnitude < EPSILON then Vector2.new(0, 1) else normal.Unit
+	return value - n * (2 * value:Dot(n))
+end
+
+function MathUtils.vector2Slide(value: Vector2, normal: Vector2): Vector2
+	local n = if normal.Magnitude < EPSILON then Vector2.new(0, 1) else normal.Unit
+	return value - n * value:Dot(n)
+end
+
+function MathUtils.vector2Damp(current: Vector2, target: Vector2, decay: number, dt: number): Vector2
+	local alpha = MathUtils.scalarExpDecayAlpha(decay, dt)
+	return current:Lerp(target, alpha)
+end
+
+function MathUtils.vector2DeadZone(value: Vector2, radius: number): Vector2
+	local magnitude = value.Magnitude
+	local threshold = math.max(radius, 0)
+	if magnitude <= threshold then
+		return Vector2.zero
+	end
+	return value / magnitude * (magnitude - threshold)
+end
+
+function MathUtils.vector2SnapToGrid(value: Vector2, gridSize: number): Vector2
+	local grid = math.max(math.abs(gridSize), EPSILON)
+	return Vector2.new(math.floor(value.X / grid + 0.5) * grid, math.floor(value.Y / grid + 0.5) * grid)
+end
+
+function MathUtils.vector2ComponentMin(value: Vector2): number
+	return math.min(value.X, value.Y)
+end
+
+function MathUtils.vector2ComponentMax(value: Vector2): number
+	return math.max(value.X, value.Y)
+end
+
+function MathUtils.vector2ComponentSum(value: Vector2): number
+	return value.X + value.Y
+end
+
+function MathUtils.vector2ComponentProduct(value: Vector2): number
+	return value.X * value.Y
+end
+
+function MathUtils.vector2ComponentAverage(value: Vector2): number
+	return (value.X + value.Y) * 0.5
+end
+
+function MathUtils.vector2RotateAround(point: Vector2, pivot: Vector2, angle: number): Vector2
+	return pivot + MathUtils.vector2Rotate(point - pivot, angle)
+end
+
+function MathUtils.vector3Abs(value: Vector3): Vector3
+	return Vector3.new(math.abs(value.X), math.abs(value.Y), math.abs(value.Z))
+end
+
+function MathUtils.vector3Sign(value: Vector3): Vector3
+	return Vector3.new(math.sign(value.X), math.sign(value.Y), math.sign(value.Z))
+end
+
+function MathUtils.vector3Floor(value: Vector3): Vector3
+	return Vector3.new(math.floor(value.X), math.floor(value.Y), math.floor(value.Z))
+end
+
+function MathUtils.vector3Ceil(value: Vector3): Vector3
+	return Vector3.new(math.ceil(value.X), math.ceil(value.Y), math.ceil(value.Z))
+end
+
+function MathUtils.vector3Round(value: Vector3): Vector3
+	return Vector3.new(math.floor(value.X + 0.5), math.floor(value.Y + 0.5), math.floor(value.Z + 0.5))
+end
+
+function MathUtils.vector3Min(a: Vector3, b: Vector3): Vector3
+	return Vector3.new(math.min(a.X, b.X), math.min(a.Y, b.Y), math.min(a.Z, b.Z))
+end
+
+function MathUtils.vector3Max(a: Vector3, b: Vector3): Vector3
+	return Vector3.new(math.max(a.X, b.X), math.max(a.Y, b.Y), math.max(a.Z, b.Z))
+end
+
+function MathUtils.vector3Hadamard(a: Vector3, b: Vector3): Vector3
+	return Vector3.new(a.X * b.X, a.Y * b.Y, a.Z * b.Z)
+end
+
+function MathUtils.vector3Reciprocal(value: Vector3, fallback: number?): Vector3
+	local f = fallback or 0
+	return Vector3.new(
+		MathUtils.safeDivide(1, value.X, f),
+		MathUtils.safeDivide(1, value.Y, f),
+		MathUtils.safeDivide(1, value.Z, f)
+	)
+end
+
+function MathUtils.vector3Clamp(value: Vector3, minValue: Vector3, maxValue: Vector3): Vector3
+	return Vector3.new(
+		math.clamp(value.X, minValue.X, maxValue.X),
+		math.clamp(value.Y, minValue.Y, maxValue.Y),
+		math.clamp(value.Z, minValue.Z, maxValue.Z)
+	)
+end
+
+function MathUtils.vector3ClampMagnitude(value: Vector3, maxMagnitude: number): Vector3
+	local magnitude = value.Magnitude
+	local limit = math.max(maxMagnitude, 0)
+	if magnitude > limit and magnitude > EPSILON then
+		return value / magnitude * limit
+	end
+	return value
+end
+
+function MathUtils.vector3MoveTowards(current: Vector3, target: Vector3, maxDistance: number): Vector3
+	local delta = target - current
+	local magnitude = delta.Magnitude
+	local step = math.max(maxDistance, 0)
+	if magnitude <= step or magnitude < EPSILON then
+		return target
+	end
+	return current + delta / magnitude * step
+end
+
+function MathUtils.vector3WithMagnitude(direction: Vector3, magnitude: number, fallback: Vector3?): Vector3
+	local base = direction
+	if base.Magnitude < EPSILON then
+		base = fallback or Vector3.xAxis
+	end
+	return base.Unit * magnitude
+end
+
+function MathUtils.vector3FlattenY(value: Vector3): Vector3
+	return Vector3.new(value.X, 0, value.Z)
+end
+
+function MathUtils.vector3ReplaceY(value: Vector3, y: number): Vector3
+	return Vector3.new(value.X, y, value.Z)
+end
+
+function MathUtils.vector3HorizontalMagnitude(value: Vector3): number
+	return Vector3.new(value.X, 0, value.Z).Magnitude
+end
+
+function MathUtils.vector3HorizontalUnit(value: Vector3, fallback: Vector3?): Vector3
+	local flat = Vector3.new(value.X, 0, value.Z)
+	if flat.Magnitude < EPSILON then
+		return fallback or Vector3.zAxis
+	end
+	return flat.Unit
+end
+
+function MathUtils.vector3Project(value: Vector3, normal: Vector3): Vector3
+	return MathUtils.projectVector(value, normal)
+end
+
+function MathUtils.vector3Reject(value: Vector3, normal: Vector3): Vector3
+	return MathUtils.rejectVector(value, normal)
+end
+
+function MathUtils.vector3Reflect(value: Vector3, normal: Vector3): Vector3
+	return MathUtils.reflectVector(value, normal)
+end
+
+function MathUtils.vector3Slide(value: Vector3, normal: Vector3): Vector3
+	return MathUtils.slideVector(value, normal)
+end
+
+function MathUtils.vector3Damp(current: Vector3, target: Vector3, decay: number, dt: number): Vector3
+	local alpha = MathUtils.scalarExpDecayAlpha(decay, dt)
+	return current:Lerp(target, alpha)
+end
+
+function MathUtils.vector3DeadZone(value: Vector3, radius: number): Vector3
+	local magnitude = value.Magnitude
+	local threshold = math.max(radius, 0)
+	if magnitude <= threshold then
+		return Vector3.zero
+	end
+	return value / magnitude * (magnitude - threshold)
+end
+
+function MathUtils.vector3SnapToGrid(value: Vector3, gridSize: number): Vector3
+	local grid = math.max(math.abs(gridSize), EPSILON)
+	return Vector3.new(math.floor(value.X / grid + 0.5) * grid, math.floor(value.Y / grid + 0.5) * grid, math.floor(value.Z / grid + 0.5) * grid)
+end
+
+function MathUtils.vector3ComponentMin(value: Vector3): number
+	return math.min(value.X, value.Y, value.Z)
+end
+
+function MathUtils.vector3ComponentMax(value: Vector3): number
+	return math.max(value.X, value.Y, value.Z)
+end
+
+function MathUtils.vector3ComponentSum(value: Vector3): number
+	return value.X + value.Y + value.Z
+end
+
+function MathUtils.vector3ComponentProduct(value: Vector3): number
+	return value.X * value.Y * value.Z
+end
+
+function MathUtils.vector3ComponentAverage(value: Vector3): number
+	return (value.X + value.Y + value.Z) / 3
+end
+
+function MathUtils.vector3DominantAxis(value: Vector3): Vector3
+	local a = MathUtils.vector3Abs(value)
+	if a.X >= a.Y and a.X >= a.Z then
+		return Vector3.new(math.sign(value.X), 0, 0)
+	elseif a.Y >= a.Z then
+		return Vector3.new(0, math.sign(value.Y), 0)
+	end
+	return Vector3.new(0, 0, math.sign(value.Z))
+end
+
+function MathUtils.vector3LeastAxis(value: Vector3): Vector3
+	local a = MathUtils.vector3Abs(value)
+	if a.X <= a.Y and a.X <= a.Z then
+		return Vector3.xAxis
+	elseif a.Y <= a.Z then
+		return Vector3.yAxis
+	end
+	return Vector3.zAxis
+end
+
+function MathUtils.vector3RotateAroundAxis(value: Vector3, axis: Vector3, angle: number): Vector3
+	local n = MathUtils.safeUnit(axis, Vector3.yAxis)
+	return CFrame.fromAxisAngle(n, angle):VectorToWorldSpace(value)
+end
+
+function MathUtils.vector3RotateAroundPoint(point: Vector3, pivot: Vector3, axis: Vector3, angle: number): Vector3
+	local offset = point - pivot
+	return pivot + MathUtils.vector3RotateAroundAxis(offset, axis, angle)
+end
+
+function MathUtils.vector3AngleBetween(a: Vector3, b: Vector3): number
+	local ua = MathUtils.safeUnit(a, Vector3.xAxis)
+	local ub = MathUtils.safeUnit(b, Vector3.xAxis)
+	return math.acos(math.clamp(ua:Dot(ub), -1, 1))
+end
+
+function MathUtils.vector3SignedAngleAroundAxis(a: Vector3, b: Vector3, axis: Vector3): number
+	local n = MathUtils.safeUnit(axis, Vector3.yAxis)
+	local pa = MathUtils.vector3Reject(a, n)
+	local pb = MathUtils.vector3Reject(b, n)
+	local angle = MathUtils.vector3AngleBetween(pa, pb)
+	return angle * math.sign(n:Dot(pa:Cross(pb)))
+end
+
+function MathUtils.vector3Orthogonal(direction: Vector3): Vector3
+	local n = MathUtils.safeUnit(direction, Vector3.yAxis)
+	local axis = if math.abs(n.Y) < 0.9 then Vector3.yAxis else Vector3.xAxis
+	return MathUtils.safeUnit(n:Cross(axis), Vector3.zAxis)
+end
+
+function MathUtils.vector3BuildBasisRight(forward: Vector3, up: Vector3?): Vector3
+	local f = MathUtils.safeUnit(forward, Vector3.new(0, 0, -1))
+	local u = MathUtils.safeUnit(up or Vector3.yAxis, Vector3.yAxis)
+	return MathUtils.safeUnit(u:Cross(f), Vector3.xAxis)
+end
+
+function MathUtils.vector3BuildBasisUp(forward: Vector3, up: Vector3?): Vector3
+	local f = MathUtils.safeUnit(forward, Vector3.new(0, 0, -1))
+	local r = MathUtils.vector3BuildBasisRight(f, up)
+	return MathUtils.safeUnit(f:Cross(r), Vector3.yAxis)
+end
+
+function MathUtils.vector3ProjectOnPlane(point: Vector3, planePoint: Vector3, planeNormal: Vector3): Vector3
+	local n = MathUtils.safeUnit(planeNormal, Vector3.yAxis)
+	return point - n * (point - planePoint):Dot(n)
+end
+
+function MathUtils.vector3MirrorAcrossPlane(point: Vector3, planePoint: Vector3, planeNormal: Vector3): Vector3
+	local n = MathUtils.safeUnit(planeNormal, Vector3.yAxis)
+	return point - n * (2 * (point - planePoint):Dot(n))
+end
+
+function MathUtils.vector3BezierQuadratic(a: Vector3, b: Vector3, c: Vector3, t: number): Vector3
+	local x = math.clamp(t, 0, 1)
+	local u = 1 - x
+	return a * (u * u) + b * (2 * u * x) + c * (x * x)
+end
+
+function MathUtils.vector3BezierCubic(a: Vector3, b: Vector3, c: Vector3, d: Vector3, t: number): Vector3
+	local x = math.clamp(t, 0, 1)
+	local u = 1 - x
+	return a * (u * u * u) + b * (3 * u * u * x) + c * (3 * u * x * x) + d * (x * x * x)
+end
+
+function MathUtils.vector3CatmullRom(p0: Vector3, p1: Vector3, p2: Vector3, p3: Vector3, t: number): Vector3
+	local x = math.clamp(t, 0, 1)
+	local x2 = x * x
+	local x3 = x2 * x
+	return (p1 * 2 + (p2 - p0) * x + (p0 * 2 - p1 * 5 + p2 * 4 - p3) * x2 + (-p0 + p1 * 3 - p2 * 3 + p3) * x3) * 0.5
+end
+
+function MathUtils.cameraYawPitchFromCFrame(cameraCFrame: CFrame): (number, number)
+	local look = cameraCFrame.LookVector
+	local yaw = math.atan2(-look.X, -look.Z)
+	local pitch = math.asin(math.clamp(look.Y, -1, 1))
+	return yaw, pitch
+end
+
+function MathUtils.cameraClampYawPitch(yaw: number, pitch: number, minPitch: number, maxPitch: number): (number, number)
+	local safeYaw = MathUtils.normalizeAngle(yaw)
+	local safePitch = math.clamp(pitch, minPitch, maxPitch)
+	return safeYaw, safePitch
+end
+
+function MathUtils.cameraVelocityLead(position: Vector3, velocity: Vector3, leadTime: number, maxDistance: number): Vector3
+	local lead = velocity * math.max(leadTime, 0)
+	lead = MathUtils.vector3ClampMagnitude(lead, maxDistance)
+	return position + lead
+end
+
+function MathUtils.cameraSoftFov(currentFov: number, targetFov: number, halfLife: number, dt: number): number
+	local alpha = MathUtils.scalarHalfLifeAlpha(halfLife, dt)
+	return currentFov + (targetFov - currentFov) * alpha
+end
+
+function MathUtils.cameraDistanceForWidth(width: number, horizontalFovRadians: number): number
+	local halfWidth = math.max(width, EPSILON) * 0.5
+	return halfWidth / math.max(math.tan(horizontalFovRadians * 0.5), EPSILON)
+end
+
+function MathUtils.cameraHorizontalFov(verticalFovRadians: number, aspect: number): number
+	local safeAspect = math.max(aspect, EPSILON)
+	return 2 * math.atan(math.tan(verticalFovRadians * 0.5) * safeAspect)
+end
+
+function MathUtils.cameraVerticalFov(horizontalFovRadians: number, aspect: number): number
+	local safeAspect = math.max(aspect, EPSILON)
+	return 2 * math.atan(math.tan(horizontalFovRadians * 0.5) / safeAspect)
+end
+
+function MathUtils.cameraScreenToNdc(point: Vector2, viewportSize: Vector2): Vector2
+	local x = (point.X / math.max(viewportSize.X, EPSILON)) * 2 - 1
+	local y = 1 - (point.Y / math.max(viewportSize.Y, EPSILON)) * 2
+	return Vector2.new(x, y)
+end
+
+function MathUtils.cameraNdcToScreen(point: Vector2, viewportSize: Vector2): Vector2
+	local x = (point.X + 1) * 0.5 * viewportSize.X
+	local y = (1 - point.Y) * 0.5 * viewportSize.Y
+	return Vector2.new(x, y)
+end
+
+function MathUtils.cameraPanAtDistance(cameraCFrame: CFrame, ndcDelta: Vector2, distance: number, verticalFovRadians: number, aspect: number): Vector3
+	local halfY = math.tan(verticalFovRadians * 0.5) * distance
+	local halfX = halfY * aspect
+	return cameraCFrame.RightVector * (ndcDelta.X * halfX) + cameraCFrame.UpVector * (ndcDelta.Y * halfY)
+end
+
+function MathUtils.cameraRollFromVelocity(velocity: Vector3, cameraRight: Vector3, maxRoll: number, speedForMax: number): number
+	local side = velocity:Dot(cameraRight)
+	local alpha = math.clamp(side / math.max(speedForMax, EPSILON), -1, 1)
+	return -alpha * maxRoll
+end
+
+function MathUtils.cameraPitchFromVelocity(velocity: Vector3, cameraLook: Vector3, maxPitch: number, speedForMax: number): number
+	local forward = velocity:Dot(cameraLook)
+	local alpha = math.clamp(forward / math.max(speedForMax, EPSILON), -1, 1)
+	return alpha * maxPitch
+end
+
+function MathUtils.cameraFocusPlanePoint(cameraCFrame: CFrame, distance: number, viewportOffset: Vector2, verticalFovRadians: number, aspect: number): Vector3
+	local center = cameraCFrame.Position + cameraCFrame.LookVector * distance
+	return center + MathUtils.cameraPanAtDistance(cameraCFrame, viewportOffset, distance, verticalFovRadians, aspect)
+end
+
+function MathUtils.cameraShakeTraumaDecay(trauma: number, decayPerSecond: number, dt: number): number
+	local decay = math.max(decayPerSecond, 0) * math.max(dt, 0)
+	return math.max(0, trauma - decay)
+end
+
+function MathUtils.cameraShakeFromTrauma(seed: number, time: number, trauma: number, amplitude: Vector3, frequency: number): Vector3
+	local strength = math.clamp(trauma, 0, 1) ^ 2
+	local t = time * frequency
+	return Vector3.new(math.noise(seed, t, 0), math.noise(seed, 0, t), math.noise(0, seed, t)) * strength * amplitude
+end
+
+function MathUtils.cameraCollisionPadding(distance: number, basePadding: number, distanceScale: number): number
+	return math.max(0, basePadding + math.max(distance, 0) * distanceScale)
+end
+
+function MathUtils.cameraObstructionAlpha(clearDistance: number, blockedDistance: number): number
+	return math.clamp(blockedDistance / math.max(clearDistance, EPSILON), 0, 1)
+end
+
+function MathUtils.collisionAABBContainsPoint(minPoint: Vector3, maxPoint: Vector3, point: Vector3): boolean
+	return point.X >= minPoint.X and point.X <= maxPoint.X and point.Y >= minPoint.Y and point.Y <= maxPoint.Y and point.Z >= minPoint.Z and point.Z <= maxPoint.Z
+end
+
+function MathUtils.collisionOBBContainsPoint(boxCFrame: CFrame, halfExtents: Vector3, point: Vector3): boolean
+	local p = boxCFrame:PointToObjectSpace(point)
+	return math.abs(p.X) <= halfExtents.X and math.abs(p.Y) <= halfExtents.Y and math.abs(p.Z) <= halfExtents.Z
+end
+
+function MathUtils.collisionAABBCenter(minPoint: Vector3, maxPoint: Vector3): Vector3
+	return (minPoint + maxPoint) * 0.5
+end
+
+function MathUtils.collisionAABBSize(minPoint: Vector3, maxPoint: Vector3): Vector3
+	return maxPoint - minPoint
+end
+
+function MathUtils.collisionAABBHalfExtents(minPoint: Vector3, maxPoint: Vector3): Vector3
+	return (maxPoint - minPoint) * 0.5
+end
+
+function MathUtils.collisionAABBFromCenterSize(center: Vector3, size: Vector3): (Vector3, Vector3)
+	local half = size * 0.5
+	return center - half, center + half
+end
+
+function MathUtils.collisionAABBInflate(minPoint: Vector3, maxPoint: Vector3, amount: number): (Vector3, Vector3)
+	local v = Vector3.one * amount
+	return minPoint - v, maxPoint + v
+end
+
+function MathUtils.collisionAABBUnion(minA: Vector3, maxA: Vector3, minB: Vector3, maxB: Vector3): (Vector3, Vector3)
+	local minPoint = Vector3.new(math.min(minA.X, minB.X), math.min(minA.Y, minB.Y), math.min(minA.Z, minB.Z))
+	local maxPoint = Vector3.new(math.max(maxA.X, maxB.X), math.max(maxA.Y, maxB.Y), math.max(maxA.Z, maxB.Z))
+	return minPoint, maxPoint
+end
+
+function MathUtils.collisionAABBIntersection(minA: Vector3, maxA: Vector3, minB: Vector3, maxB: Vector3): (boolean, Vector3, Vector3)
+	local minPoint = Vector3.new(math.max(minA.X, minB.X), math.max(minA.Y, minB.Y), math.max(minA.Z, minB.Z))
+	local maxPoint = Vector3.new(math.min(maxA.X, maxB.X), math.min(maxA.Y, maxB.Y), math.min(maxA.Z, maxB.Z))
+	local hit = minPoint.X <= maxPoint.X and minPoint.Y <= maxPoint.Y and minPoint.Z <= maxPoint.Z
+	return hit, minPoint, maxPoint
+end
+
+function MathUtils.collisionAABBVolume(minPoint: Vector3, maxPoint: Vector3): number
+	local size = maxPoint - minPoint
+	return math.max(size.X, 0) * math.max(size.Y, 0) * math.max(size.Z, 0)
+end
+
+function MathUtils.collisionAABBSurfaceArea(minPoint: Vector3, maxPoint: Vector3): number
+	local size = maxPoint - minPoint
+	local x = math.max(size.X, 0)
+	local y = math.max(size.Y, 0)
+	local z = math.max(size.Z, 0)
+	return 2 * (x * y + y * z + z * x)
+end
+
+function MathUtils.collisionAABBDiagonal(minPoint: Vector3, maxPoint: Vector3): number
+	return (maxPoint - minPoint).Magnitude
+end
+
+function MathUtils.collisionSphereContainsPoint(center: Vector3, radius: number, point: Vector3): boolean
+	local delta = point - center
+	return delta:Dot(delta) <= radius * radius
+end
+
+function MathUtils.collisionCapsuleContainsPoint(a: Vector3, b: Vector3, radius: number, point: Vector3): boolean
+	local closest = MathUtils.closestPointOnSegment(point, a, b)
+	local delta = point - closest
+	return delta:Dot(delta) <= radius * radius
+end
+
+function MathUtils.collisionPlaneSignedDistance(point: Vector3, planeNormal: Vector3, planeD: number): number
+	local n = MathUtils.safeUnit(planeNormal, Vector3.yAxis)
+	return n:Dot(point) + planeD
+end
+
+function MathUtils.collisionClassifySpherePlane(center: Vector3, radius: number, planeNormal: Vector3, planeD: number): number
+	local distance = MathUtils.collisionPlaneSignedDistance(center, planeNormal, planeD)
+	if distance > radius then
+		return 1
+	elseif distance < -radius then
+		return -1
+	end
+	return 0
+end
+
+function MathUtils.collisionRayPlaneTime(origin: Vector3, direction: Vector3, planeNormal: Vector3, planeD: number): (boolean, number)
+	local denom = planeNormal:Dot(direction)
+	if math.abs(denom) < EPSILON then
+		return false, 0
+	end
+	return true, -(planeNormal:Dot(origin) + planeD) / denom
+end
+
+function MathUtils.collisionSegmentPlaneTime(a: Vector3, b: Vector3, planeNormal: Vector3, planeD: number): (boolean, number)
+	local hit, t = MathUtils.collisionRayPlaneTime(a, b - a, planeNormal, planeD)
+	return hit and t >= 0 and t <= 1, t
+end
+
+function MathUtils.collisionSphereAABBDistance(center: Vector3, radius: number, minPoint: Vector3, maxPoint: Vector3): number
+	local closest = MathUtils.closestPointOnAABB(center, minPoint, maxPoint)
+	return math.max((center - closest).Magnitude - radius, 0)
+end
+
+function MathUtils.collisionPointTriangleBarycentric(point: Vector3, a: Vector3, b: Vector3, c: Vector3): Vector3
+	local v0 = b - a
+	local v1 = c - a
+	local v2 = point - a
+	local d00 = v0:Dot(v0)
+	local d01 = v0:Dot(v1)
+	local d11 = v1:Dot(v1)
+	local d20 = v2:Dot(v0)
+	local d21 = v2:Dot(v1)
+	local denom = d00 * d11 - d01 * d01
+	if math.abs(denom) < EPSILON then
+		return Vector3.new(1, 0, 0)
+	end
+	local v = (d11 * d20 - d01 * d21) / denom
+	local w = (d00 * d21 - d01 * d20) / denom
+	return Vector3.new(1 - v - w, v, w)
+end
+
+function MathUtils.collisionBarycentricInside(barycentric: Vector3, tolerance: number?): boolean
+	local t = tolerance or 0
+	local sum = barycentric.X + barycentric.Y + barycentric.Z
+	return barycentric.X >= -t and barycentric.Y >= -t and barycentric.Z >= -t and math.abs(sum - 1) <= math.max(t, EPSILON)
+end
+
+function MathUtils.collisionResolvePosition(position: Vector3, normal: Vector3, depth: number, slop: number?): Vector3
+	local n = MathUtils.safeUnit(normal, Vector3.yAxis)
+	return position + n * math.max(depth - (slop or 0), 0)
+end
+
+function MathUtils.collisionBounceVelocity(velocity: Vector3, normal: Vector3, restitution: number): Vector3
+	local n = MathUtils.safeUnit(normal, Vector3.yAxis)
+	local vn = velocity:Dot(n)
+	if vn >= 0 then
+		return velocity
+	end
+	return velocity - n * ((1 + math.clamp(restitution, 0, 1)) * vn)
+end
+
+function MathUtils.collisionFrictionVelocity(velocity: Vector3, normal: Vector3, friction: number): Vector3
+	local n = MathUtils.safeUnit(normal, Vector3.yAxis)
+	local tangent = velocity - n * velocity:Dot(n)
+	return velocity - tangent * math.clamp(friction, 0, 1)
+end
+
+function MathUtils.collisionIsSeparating(relativeVelocity: Vector3, normal: Vector3): boolean
+	local n = MathUtils.safeUnit(normal, Vector3.yAxis)
+	return relativeVelocity:Dot(n) > 0
+end
+
+function MathUtils.gridWorldToCell2D(position: Vector3, cellSize: number): Vector2
+	local size = math.max(cellSize, EPSILON)
+	return Vector2.new(math.floor(position.X / size), math.floor(position.Z / size))
+end
+
+function MathUtils.gridCellToWorld2D(cell: Vector2, cellSize: number, y: number?): Vector3
+	local size = math.max(cellSize, EPSILON)
+	return Vector3.new((cell.X + 0.5) * size, y or 0, (cell.Y + 0.5) * size)
+end
+
+function MathUtils.gridWorldToCell3D(position: Vector3, cellSize: number): Vector3
+	local size = math.max(cellSize, EPSILON)
+	return Vector3.new(math.floor(position.X / size), math.floor(position.Y / size), math.floor(position.Z / size))
+end
+
+function MathUtils.gridCellToWorld3D(cell: Vector3, cellSize: number): Vector3
+	local size = math.max(cellSize, EPSILON)
+	return (cell + Vector3.one * 0.5) * size
+end
+
+function MathUtils.gridManhattan2D(a: Vector2, b: Vector2): number
+	return math.abs(a.X - b.X) + math.abs(a.Y - b.Y)
+end
+
+function MathUtils.gridChebyshev2D(a: Vector2, b: Vector2): number
+	return math.max(math.abs(a.X - b.X), math.abs(a.Y - b.Y))
+end
+
+function MathUtils.gridManhattan3D(a: Vector3, b: Vector3): number
+	return math.abs(a.X - b.X) + math.abs(a.Y - b.Y) + math.abs(a.Z - b.Z)
+end
+
+function MathUtils.gridChebyshev3D(a: Vector3, b: Vector3): number
+	return math.max(math.abs(a.X - b.X), math.abs(a.Y - b.Y), math.abs(a.Z - b.Z))
+end
+
+function MathUtils.gridCellKey2D(cell: Vector2): string
+	return tostring(math.floor(cell.X)) .. ":" .. tostring(math.floor(cell.Y))
+end
+
+function MathUtils.gridCellKey3D(cell: Vector3): string
+	return tostring(math.floor(cell.X)) .. ":" .. tostring(math.floor(cell.Y)) .. ":" .. tostring(math.floor(cell.Z))
+end
+
+function MathUtils.gridNeighbor4(cell: Vector2): { Vector2 }
+	return {
+		cell + Vector2.new(1, 0),
+		cell + Vector2.new(-1, 0),
+		cell + Vector2.new(0, 1),
+		cell + Vector2.new(0, -1),
+	}
+end
+
+function MathUtils.gridNeighbor8(cell: Vector2): { Vector2 }
+	return {
+		cell + Vector2.new(1, 0),
+		cell + Vector2.new(-1, 0),
+		cell + Vector2.new(0, 1),
+		cell + Vector2.new(0, -1),
+		cell + Vector2.new(1, 1),
+		cell + Vector2.new(1, -1),
+		cell + Vector2.new(-1, 1),
+		cell + Vector2.new(-1, -1),
+	}
+end
+
+function MathUtils.gridHeuristicOctile(a: Vector2, b: Vector2): number
+	local dx = math.abs(a.X - b.X)
+	local dy = math.abs(a.Y - b.Y)
+	return math.max(dx, dy) + (math.sqrt(2) - 1) * math.min(dx, dy)
+end
+
+function MathUtils.gridHeuristicEuclidean(a: Vector2, b: Vector2): number
+	return (a - b).Magnitude
+end
+
+function MathUtils.gridHeuristicDiagonal3D(a: Vector3, b: Vector3): number
+	local delta = MathUtils.vector3Abs(a - b)
+	return math.max(delta.X, delta.Y, delta.Z)
+end
+
+function MathUtils.gridCellCenterAABB(cell: Vector3, cellSize: number): (Vector3, Vector3)
+	local center = MathUtils.gridCellToWorld3D(cell, cellSize)
+	local half = Vector3.one * (math.max(cellSize, EPSILON) * 0.5)
+	return center - half, center + half
+end
+
+function MathUtils.pathSmoothCorner(previous: Vector3, current: Vector3, nextPoint: Vector3, radius: number): (Vector3, Vector3)
+	local inDir = MathUtils.safeUnit(previous - current, Vector3.zAxis)
+	local outDir = MathUtils.safeUnit(nextPoint - current, Vector3.zAxis)
+	local safeRadius = math.max(radius, 0)
+	return current + inDir * safeRadius, current + outDir * safeRadius
+end
+
+function MathUtils.pathSegmentLength(points: { Vector3 }): number
+	local total = 0
+	for i = 2, #points do
+		total += (points[i] - points[i - 1]).Magnitude
+	end
+	return total
+end
+
+function MathUtils.pathSampleLinear(points: { Vector3 }, alpha: number): Vector3
+	if #points == 0 then
+		return Vector3.zero
+	elseif #points == 1 then
+		return points[1]
+	end
+	local total = MathUtils.pathSegmentLength(points)
+	local target = math.clamp(alpha, 0, 1) * total
+	local walked = 0
+	for i = 2, #points do
+		local a = points[i - 1]
+		local b = points[i]
+		local length = (b - a).Magnitude
+		if walked + length >= target then
+			return a:Lerp(b, (target - walked) / math.max(length, EPSILON))
+		end
+		walked += length
+	end
+	return points[#points]
+end
+
+function MathUtils.pathClosestPointPolyline(point: Vector3, points: { Vector3 }): Vector3
+	if #points == 0 then
+		return point
+	end
+	local best = points[1]
+	local bestDist = math.huge
+	for i = 2, #points do
+		local closest = MathUtils.closestPointOnSegment(point, points[i - 1], points[i])
+		local dist = (point - closest).Magnitude
+		if dist < bestDist then
+			bestDist = dist
+			best = closest
+		end
+	end
+	return best
+end
+
+function MathUtils.pathSimplifyCollinear(points: { Vector3 }, tolerance: number?): { Vector3 }
+	if #points <= 2 then
+		return points
+	end
+	local result = { points[1] }
+	local threshold = tolerance or 0.001
+	for i = 2, #points - 1 do
+		local a = MathUtils.safeUnit(points[i] - points[i - 1], Vector3.zAxis)
+		local b = MathUtils.safeUnit(points[i + 1] - points[i], Vector3.zAxis)
+		if (a - b).Magnitude > threshold then
+			table.insert(result, points[i])
+		end
+	end
+	table.insert(result, points[#points])
+	return result
+end
+
+function MathUtils.colorMathLerp(a: Color3, b: Color3, alpha: number): Color3
+	local t = math.clamp(alpha, 0, 1)
+	return Color3.new(a.R + (b.R - a.R) * t, a.G + (b.G - a.G) * t, a.B + (b.B - a.B) * t)
+end
+
+function MathUtils.colorMathScale(color: Color3, scale: number): Color3
+	return Color3.new(math.clamp(color.R * scale, 0, 1), math.clamp(color.G * scale, 0, 1), math.clamp(color.B * scale, 0, 1))
+end
+
+function MathUtils.colorMathAdd(a: Color3, b: Color3): Color3
+	return Color3.new(math.clamp(a.R + b.R, 0, 1), math.clamp(a.G + b.G, 0, 1), math.clamp(a.B + b.B, 0, 1))
+end
+
+function MathUtils.colorMathMultiply(a: Color3, b: Color3): Color3
+	return Color3.new(a.R * b.R, a.G * b.G, a.B * b.B)
+end
+
+function MathUtils.colorMathLuminance(color: Color3): number
+	return color.R * 0.2126 + color.G * 0.7152 + color.B * 0.0722
+end
+
+function MathUtils.colorMathContrastText(color: Color3): Color3
+	if MathUtils.colorMathLuminance(color) > 0.5 then
+		return Color3.new(0, 0, 0)
+	end
+	return Color3.new(1, 1, 1)
+end
+
+function MathUtils.cframeWithoutPosition(cf: CFrame): CFrame
+	return cf - cf.Position
+end
+
+function MathUtils.cframeWithPosition(cf: CFrame, position: Vector3): CFrame
+	return CFrame.new(position) * (cf - cf.Position)
+end
+
+function MathUtils.cframeTransformPointArray(cf: CFrame, points: { Vector3 }): { Vector3 }
+	local result = {}
+	for i, point in ipairs(points) do
+		result[i] = cf:PointToWorldSpace(point)
+	end
+	return result
+end
+
+function MathUtils.cframeInverseTransformPointArray(cf: CFrame, points: { Vector3 }): { Vector3 }
+	local result = {}
+	for i, point in ipairs(points) do
+		result[i] = cf:PointToObjectSpace(point)
+	end
+	return result
+end
+
+function MathUtils.cframeLookAtFlat(position: Vector3, target: Vector3, fallbackForward: Vector3?): CFrame
+	local delta = Vector3.new(target.X - position.X, 0, target.Z - position.Z)
+	local forward = MathUtils.safeUnit(delta, fallbackForward or Vector3.new(0, 0, -1))
+	return CFrame.lookAt(position, position + forward, Vector3.yAxis)
+end
+
+function MathUtils.cframeYawOnly(cf: CFrame): CFrame
+	local forward = Vector3.new(cf.LookVector.X, 0, cf.LookVector.Z)
+	if forward.Magnitude < EPSILON then
+		return CFrame.new(cf.Position)
+	end
+	return CFrame.lookAt(cf.Position, cf.Position + forward.Unit, Vector3.yAxis)
+end
+
+function MathUtils.cframeBlendPositionRotation(a: CFrame, b: CFrame, positionAlpha: number, rotationAlpha: number): CFrame
+	local pos = a.Position:Lerp(b.Position, math.clamp(positionAlpha, 0, 1))
+	local rot = (a - a.Position):Lerp(b - b.Position, math.clamp(rotationAlpha, 0, 1))
+	return CFrame.new(pos) * rot
+end
+
+function MathUtils.arrayAverageVector3(values: { Vector3 }): Vector3
+	if #values == 0 then
+		return Vector3.zero
+	end
+	local sum = Vector3.zero
+	for _, value in ipairs(values) do
+		sum += value
+	end
+	return sum / #values
+end
+
+function MathUtils.arrayAverageNumber(values: { number }): number
+	if #values == 0 then
+		return 0
+	end
+	local sum = 0
+	for _, value in ipairs(values) do
+		sum += value
+	end
+	return sum / #values
+end
+
+function MathUtils.arrayMinNumber(values: { number }, fallback: number?): number
+	if #values == 0 then
+		return fallback or 0
+	end
+	local result = values[1]
+	for i = 2, #values do
+		result = math.min(result, values[i])
+	end
+	return result
+end
+
+function MathUtils.arrayMaxNumber(values: { number }, fallback: number?): number
+	if #values == 0 then
+		return fallback or 0
+	end
+	local result = values[1]
+	for i = 2, #values do
+		result = math.max(result, values[i])
+	end
+	return result
+end
+
+function MathUtils.arrayBoundsVector3(values: { Vector3 }): (Vector3, Vector3)
+	if #values == 0 then
+		return Vector3.zero, Vector3.zero
+	end
+	local minPoint = values[1]
+	local maxPoint = values[1]
+	for i = 2, #values do
+		local value = values[i]
+		minPoint = Vector3.new(math.min(minPoint.X, value.X), math.min(minPoint.Y, value.Y), math.min(minPoint.Z, value.Z))
+		maxPoint = Vector3.new(math.max(maxPoint.X, value.X), math.max(maxPoint.Y, value.Y), math.max(maxPoint.Z, value.Z))
+	end
+	return minPoint, maxPoint
+end
+
+function MathUtils.arrayWeightedAverageVector3(values: { Vector3 }, weights: { number }): Vector3
+	local sum = Vector3.zero
+	local total = 0
+	for i, value in ipairs(values) do
+		local weight = weights[i] or 0
+		sum += value * weight
+		total += weight
+	end
+	if math.abs(total) < EPSILON then
+		return Vector3.zero
+	end
+	return sum / total
+end
+
+function MathUtils.arrayWeightedAverageNumber(values: { number }, weights: { number }): number
+	local sum = 0
+	local total = 0
+	for i, value in ipairs(values) do
+		local weight = weights[i] or 0
+		sum += value * weight
+		total += weight
+	end
+	if math.abs(total) < EPSILON then
+		return 0
+	end
+	return sum / total
+end
+
+function MathUtils.randomUnitVector2(rng: Random?): Vector2
+	local random = rng or Random.new()
+	local angle = random:NextNumber(0, TWO_PI)
+	return Vector2.new(math.cos(angle), math.sin(angle))
+end
+
+function MathUtils.randomUnitVector3(rng: Random?): Vector3
+	local random = rng or Random.new()
+	local z = random:NextNumber(-1, 1)
+	local angle = random:NextNumber(0, TWO_PI)
+	local radius = math.sqrt(math.max(1 - z * z, 0))
+	return Vector3.new(math.cos(angle) * radius, z, math.sin(angle) * radius)
+end
+
+function MathUtils.randomPointInSphere(radius: number, rng: Random?): Vector3
+	local random = rng or Random.new()
+	local direction = MathUtils.randomUnitVector3(random)
+	local distance = radius * (random:NextNumber() ^ (1 / 3))
+	return direction * distance
+end
+
+function MathUtils.randomPointInCircle(radius: number, rng: Random?): Vector2
+	local random = rng or Random.new()
+	local direction = MathUtils.randomUnitVector2(random)
+	local distance = radius * math.sqrt(random:NextNumber())
+	return direction * distance
+end
+
+function MathUtils.noise01(x: number, y: number?, z: number?): number
+	return math.clamp(math.noise(x, y or 0, z or 0) * 0.5 + 0.5, 0, 1)
+end
+
+function MathUtils.noiseSigned(x: number, y: number?, z: number?): number
+	return math.clamp(math.noise(x, y or 0, z or 0), -1, 1)
+end
+
+function MathUtils.noiseVector3(seed: number, time: number, frequency: number): Vector3
+	local t = time * frequency
+	return Vector3.new(math.noise(seed, t, 0), math.noise(seed, 0, t), math.noise(0, seed, t))
+end
+
+function MathUtils.noiseVector2(seed: number, time: number, frequency: number): Vector2
+	local t = time * frequency
+	return Vector2.new(math.noise(seed, t, 0), math.noise(0, seed, t))
+end
+
+local function cameraDampScalar(current: number, target: number, velocity: number, smoothTime: number, dt: number): (number, number)
+	smoothTime = math.max(EPSILON, smoothTime)
+	local omega = 2 / smoothTime
+	local x = omega * dt
+	local exp = 1 / (1 + x + 0.48 * x * x + 0.235 * x * x * x)
+	local change = current - target
+	local temp = (velocity + omega * change) * dt
+	local nextVelocity = (velocity - omega * temp) * exp
+	local nextValue = target + (change + temp) * exp
+	return nextValue, nextVelocity
+end
+
+local function cameraDampVector3(current: Vector3, target: Vector3, velocity: Vector3, smoothTime: number, dt: number): (Vector3, Vector3)
+	local x, vx = cameraDampScalar(current.X, target.X, velocity.X, smoothTime, dt)
+	local y, vy = cameraDampScalar(current.Y, target.Y, velocity.Y, smoothTime, dt)
+	local z, vz = cameraDampScalar(current.Z, target.Z, velocity.Z, smoothTime, dt)
+	return Vector3.new(x, y, z), Vector3.new(vx, vy, vz)
+end
+
+local function cameraClampDistance(distance: number, minDistance: number?, maxDistance: number?): number
+	local minValue = minDistance or 0
+	local maxValue = maxDistance or MathUtils.FLOAT_MAX
+	return math.clamp(distance, minValue, math.max(minValue, maxValue))
+end
+
+function MathUtils.cameraClampPitch(pitch: number, minPitch: number?, maxPitch: number?): number
+	local minValue = minPitch or math.rad(-85)
+	local maxValue = maxPitch or math.rad(85)
+	return math.clamp(pitch, minValue, maxValue)
+end
+
+function MathUtils.cameraNormalizeYaw(yaw: number): number
+	return MathUtils.normalizeAngle(yaw)
+end
+
+local function collisionClosestPointTriangleInternal(point: Vector3, a: Vector3, b: Vector3, c: Vector3): Vector3
+	local ab = b - a
+	local ac = c - a
+	local ap = point - a
+	local d1 = ab:Dot(ap)
+	local d2 = ac:Dot(ap)
+	if d1 <= 0 and d2 <= 0 then
+		return a
+	end
+	local bp = point - b
+	local d3 = ab:Dot(bp)
+	local d4 = ac:Dot(bp)
+	if d3 >= 0 and d4 <= d3 then
+		return b
+	end
+	local vc = d1 * d4 - d3 * d2
+	if vc <= 0 and d1 >= 0 and d3 <= 0 then
+		local v = d1 / (d1 - d3)
+		return a + ab * v
+	end
+	local cp = point - c
+	local d5 = ab:Dot(cp)
+	local d6 = ac:Dot(cp)
+	if d6 >= 0 and d5 <= d6 then
+		return c
+	end
+	local vb = d5 * d2 - d1 * d6
+	if vb <= 0 and d2 >= 0 and d6 <= 0 then
+		local w = d2 / (d2 - d6)
+		return a + ac * w
+	end
+	local va = d3 * d6 - d5 * d4
+	if va <= 0 and (d4 - d3) >= 0 and (d5 - d6) >= 0 then
+		local w = (d4 - d3) / ((d4 - d3) + (d5 - d6))
+		return b + (c - b) * w
+	end
+	local denom = 1 / math.max(va + vb + vc, EPSILON)
+	local v = vb * denom
+	local w = vc * denom
+	return a + ab * v + ac * w
+end
+
+function MathUtils.collisionClosestPointOnTriangle(point: Vector3, a: Vector3, b: Vector3, c: Vector3): Vector3
+	return collisionClosestPointTriangleInternal(point, a, b, c)
+end
+
+function MathUtils.collisionPointTriangleDistance(point: Vector3, a: Vector3, b: Vector3, c: Vector3): (number, Vector3)
+	local closest = collisionClosestPointTriangleInternal(point, a, b, c)
+	return (point - closest).Magnitude, closest
+end
+
+function MathUtils.collisionSphereSphere(centerA: Vector3, radiusA: number, centerB: Vector3, radiusB: number): (boolean, Vector3, number)
+	local delta = centerB - centerA
+	local distance = delta.Magnitude
+	local radius = radiusA + radiusB
+	if distance > radius then
+		return false, if distance > EPSILON then delta / distance else Vector3.yAxis, 0
+	end
+	local normal = if distance > EPSILON then delta / distance else Vector3.yAxis
+	return true, normal, radius - distance
+end
+
+function MathUtils.collisionSphereAABB(center: Vector3, radius: number, minPoint: Vector3, maxPoint: Vector3): (boolean, Vector3, number, Vector3)
+	local closest = MathUtils.closestPointOnAABB(center, minPoint, maxPoint)
+	local delta = center - closest
+	local distSq = delta:Dot(delta)
+	if distSq > radius * radius then
+		return false, Vector3.yAxis, 0, closest
+	end
+	if distSq > EPSILON then
+		local dist = math.sqrt(distSq)
+		return true, delta / dist, radius - dist, closest
+	end
+	local toMin = center - minPoint
+	local toMax = maxPoint - center
+	local minAxis = math.min(toMin.X, toMax.X, toMin.Y, toMax.Y, toMin.Z, toMax.Z)
+	if minAxis == toMin.X then
+		return true, Vector3.new(-1, 0, 0), radius + toMin.X, Vector3.new(minPoint.X, center.Y, center.Z)
+	elseif minAxis == toMax.X then
+		return true, Vector3.new(1, 0, 0), radius + toMax.X, Vector3.new(maxPoint.X, center.Y, center.Z)
+	elseif minAxis == toMin.Y then
+		return true, Vector3.new(0, -1, 0), radius + toMin.Y, Vector3.new(center.X, minPoint.Y, center.Z)
+	elseif minAxis == toMax.Y then
+		return true, Vector3.new(0, 1, 0), radius + toMax.Y, Vector3.new(center.X, maxPoint.Y, center.Z)
+	elseif minAxis == toMin.Z then
+		return true, Vector3.new(0, 0, -1), radius + toMin.Z, Vector3.new(center.X, center.Y, minPoint.Z)
+	end
+	return true, Vector3.new(0, 0, 1), radius + toMax.Z, Vector3.new(center.X, center.Y, maxPoint.Z)
+end
+
+function MathUtils.collisionSphereOBB(center: Vector3, radius: number, boxCFrame: CFrame, halfExtents: Vector3): (boolean, Vector3, number, Vector3)
+	local localCenter = boxCFrame:PointToObjectSpace(center)
+	local localClosest = Vector3.new(
+		math.clamp(localCenter.X, -halfExtents.X, halfExtents.X),
+		math.clamp(localCenter.Y, -halfExtents.Y, halfExtents.Y),
+		math.clamp(localCenter.Z, -halfExtents.Z, halfExtents.Z)
+	)
+	local closest = boxCFrame:PointToWorldSpace(localClosest)
+	local delta = center - closest
+	local distSq = delta:Dot(delta)
+	if distSq > radius * radius then
+		return false, Vector3.yAxis, 0, closest
+	end
+	if distSq > EPSILON then
+		local dist = math.sqrt(distSq)
+		return true, delta / dist, radius - dist, closest
+	end
+	local axis = Vector3.xAxis
+	local penetration = halfExtents.X - math.abs(localCenter.X)
+	local yPenetration = halfExtents.Y - math.abs(localCenter.Y)
+	local zPenetration = halfExtents.Z - math.abs(localCenter.Z)
+	if yPenetration < penetration then
+		axis = Vector3.yAxis
+		penetration = yPenetration
+	end
+	if zPenetration < penetration then
+		axis = Vector3.zAxis
+		penetration = zPenetration
+	end
+	local localNormal = axis * MathUtils.signNonZero(localCenter:Dot(axis))
+	local normal = boxCFrame:VectorToWorldSpace(localNormal)
+	return true, normal, radius + penetration, center - normal * radius
+end
+
+function MathUtils.collisionCapsuleSphere(a: Vector3, b: Vector3, capsuleRadius: number, sphereCenter: Vector3, sphereRadius: number): (boolean, Vector3, number, Vector3)
+	local closest = MathUtils.closestPointOnSegment(sphereCenter, a, b)
+	local hit, normal, depth = MathUtils.collisionSphereSphere(closest, capsuleRadius, sphereCenter, sphereRadius)
+	return hit, normal, depth, closest
+end
+
+function MathUtils.collisionCapsuleCapsule(a0: Vector3, a1: Vector3, radiusA: number, b0: Vector3, b1: Vector3, radiusB: number): (boolean, Vector3, number, Vector3, Vector3)
+	local pA, pB = MathUtils.closestPointsOnSegments(a0, a1, b0, b1)
+	local hit, normal, depth = MathUtils.collisionSphereSphere(pA, radiusA, pB, radiusB)
+	return hit, normal, depth, pA, pB
+end
+
+function MathUtils.collisionAABBOverlapDetailed(minA: Vector3, maxA: Vector3, minB: Vector3, maxB: Vector3): (boolean, Vector3, number)
+	local overlapX = math.min(maxA.X, maxB.X) - math.max(minA.X, minB.X)
+	local overlapY = math.min(maxA.Y, maxB.Y) - math.max(minA.Y, minB.Y)
+	local overlapZ = math.min(maxA.Z, maxB.Z) - math.max(minA.Z, minB.Z)
+	if overlapX < 0 or overlapY < 0 or overlapZ < 0 then
+		return false, Vector3.zero, 0
+	end
+	local centerA = (minA + maxA) * 0.5
+	local centerB = (minB + maxB) * 0.5
+	local depth = overlapX
+	local normal = Vector3.new(MathUtils.signNonZero(centerA.X - centerB.X), 0, 0)
+	if overlapY < depth then
+		depth = overlapY
+		normal = Vector3.new(0, MathUtils.signNonZero(centerA.Y - centerB.Y), 0)
+	end
+	if overlapZ < depth then
+		depth = overlapZ
+		normal = Vector3.new(0, 0, MathUtils.signNonZero(centerA.Z - centerB.Z))
+	end
+	return true, normal, depth
+end
+
+function MathUtils.collisionAABBPenetrationVector(minA: Vector3, maxA: Vector3, minB: Vector3, maxB: Vector3): Vector3
+	local hit, normal, depth = MathUtils.collisionAABBOverlapDetailed(minA, maxA, minB, maxB)
+	if not hit then
+		return Vector3.zero
+	end
+	return normal * depth
+end
+
+function MathUtils.collisionSpherePlaneContact(center: Vector3, radius: number, planeNormal: Vector3, planeD: number): (boolean, Vector3, number, Vector3)
+	local n = MathUtils.safeUnit(planeNormal, Vector3.yAxis)
+	local distance = n:Dot(center) + planeD
+	local penetration = radius - distance
+	if penetration < 0 then
+		return false, n, 0, center - n * radius
+	end
+	return true, n, penetration, center - n * radius
+end
+
+function MathUtils.collisionCapsulePlaneContact(a: Vector3, b: Vector3, radius: number, planeNormal: Vector3, planeD: number): (boolean, Vector3, number, Vector3)
+	local n = MathUtils.safeUnit(planeNormal, Vector3.yAxis)
+	local da = n:Dot(a) + planeD
+	local db = n:Dot(b) + planeD
+	local endpoint = if da < db then a else b
+	local distance = math.min(da, db)
+	local penetration = radius - distance
+	if penetration < 0 then
+		return false, n, 0, endpoint - n * radius
+	end
+	return true, n, penetration, endpoint - n * radius
+end
+
+function MathUtils.collisionRayAABBInterval(origin: Vector3, direction: Vector3, minPoint: Vector3, maxPoint: Vector3): (boolean, number, number)
+	local tMin = -MathUtils.FLOAT_MAX
+	local tMax = MathUtils.FLOAT_MAX
+	local function testAxis(originAxis: number, directionAxis: number, minAxis: number, maxAxis: number): boolean
+		if math.abs(directionAxis) < EPSILON then
+			return originAxis >= minAxis and originAxis <= maxAxis
+		end
+		local inv = 1 / directionAxis
+		local t1 = (minAxis - originAxis) * inv
+		local t2 = (maxAxis - originAxis) * inv
+		if t1 > t2 then
+			t1, t2 = t2, t1
+		end
+		tMin = math.max(tMin, t1)
+		tMax = math.min(tMax, t2)
+		return tMin <= tMax
+	end
+	if not testAxis(origin.X, direction.X, minPoint.X, maxPoint.X) then
+		return false, 0, 0
+	end
+	if not testAxis(origin.Y, direction.Y, minPoint.Y, maxPoint.Y) then
+		return false, 0, 0
+	end
+	if not testAxis(origin.Z, direction.Z, minPoint.Z, maxPoint.Z) then
+		return false, 0, 0
+	end
+	return true, tMin, tMax
+end
+
+function MathUtils.collisionRaySphereDetailed(origin: Vector3, direction: Vector3, center: Vector3, radius: number): (boolean, number?, number?)
+	local dir = MathUtils.safeUnit(direction, Vector3.zAxis)
+	local m = origin - center
+	local b = m:Dot(dir)
+	local c = m:Dot(m) - radius * radius
+	if c > 0 and b > 0 then
+		return false, nil, nil
+	end
+	local discr = b * b - c
+	if discr < 0 then
+		return false, nil, nil
+	end
+	local root = math.sqrt(discr)
+	local t0 = -b - root
+	local t1 = -b + root
+	return true, math.max(0, t0), math.max(0, t1)
+end
+
+function MathUtils.collisionSegmentSphere(a: Vector3, b: Vector3, center: Vector3, radius: number): (boolean, number, Vector3)
+	local closest, t = MathUtils.closestPointOnSegment(center, a, b)
+	local delta = center - closest
+	if delta:Dot(delta) > radius * radius then
+		return false, t, closest
+	end
+	return true, t, closest
+end
+
+function MathUtils.collisionSegmentAABB(a: Vector3, b: Vector3, minPoint: Vector3, maxPoint: Vector3): (boolean, number, number)
+	local direction = b - a
+	local hit, t0, t1 = MathUtils.collisionRayAABBInterval(a, direction, minPoint, maxPoint)
+	if not hit then
+		return false, t0, t1
+	end
+	if t1 < 0 or t0 > 1 then
+		return false, t0, t1
+	end
+	return true, math.clamp(t0, 0, 1), math.clamp(t1, 0, 1)
+end
+
+function MathUtils.collisionSweptSpherePlane(center: Vector3, radius: number, velocity: Vector3, planeNormal: Vector3, planeD: number, dt: number): (boolean, number, Vector3)
+	local n = MathUtils.safeUnit(planeNormal, Vector3.yAxis)
+	local distance = n:Dot(center) + planeD - radius
+	if distance <= 0 then
+		return true, 0, center
+	end
+	local speed = n:Dot(velocity)
+	if speed >= -EPSILON then
+		return false, dt, center + velocity * dt
+	end
+	local time = distance / -speed
+	if time > dt then
+		return false, dt, center + velocity * dt
+	end
+	return true, time, center + velocity * time
+end
+
+function MathUtils.collisionSweptSphereSphere(centerA: Vector3, radiusA: number, velocityA: Vector3, centerB: Vector3, radiusB: number, velocityB: Vector3, dt: number): (boolean, number, Vector3)
+	local relativePosition = centerA - centerB
+	local relativeVelocity = velocityA - velocityB
+	local radius = radiusA + radiusB
+	local a = relativeVelocity:Dot(relativeVelocity)
+	local b = 2 * relativePosition:Dot(relativeVelocity)
+	local c = relativePosition:Dot(relativePosition) - radius * radius
+	if c <= 0 then
+		return true, 0, centerA
+	end
+	if a < EPSILON then
+		return false, dt, centerA + velocityA * dt
+	end
+	local roots = MathUtils.solveQuadratic(a, b, c)
+	if not roots then
+		return false, dt, centerA + velocityA * dt
+	end
+	local hitTime = MathUtils.FLOAT_MAX
+	for _, root in ipairs(roots) do
+		if root >= 0 and root <= dt then
+			hitTime = math.min(hitTime, root)
+		end
+	end
+	if hitTime == MathUtils.FLOAT_MAX then
+		return false, dt, centerA + velocityA * dt
+	end
+	return true, hitTime, centerA + velocityA * hitTime
+end
+
+function MathUtils.collisionExpandedAABBForSphere(minPoint: Vector3, maxPoint: Vector3, radius: number): (Vector3, Vector3)
+	local r = Vector3.new(radius, radius, radius)
+	return minPoint - r, maxPoint + r
+end
+
+function MathUtils.collisionMinkowskiAABB(minA: Vector3, maxA: Vector3, minB: Vector3, maxB: Vector3): (Vector3, Vector3)
+	return minA - maxB, maxA - minB
+end
+
+function MathUtils.collisionResolveSphereAABB(center: Vector3, radius: number, minPoint: Vector3, maxPoint: Vector3, slop: number?): (Vector3, Vector3, number)
+	local hit, normal, depth = MathUtils.collisionSphereAABB(center, radius, minPoint, maxPoint)
+	if not hit then
+		return center, normal, 0
+	end
+	local correction = math.max(depth - (slop or 0), 0)
+	return center + normal * correction, normal, depth
+end
+
+function MathUtils.collisionResolveSphereOBB(center: Vector3, radius: number, boxCFrame: CFrame, halfExtents: Vector3, slop: number?): (Vector3, Vector3, number)
+	local hit, normal, depth = MathUtils.collisionSphereOBB(center, radius, boxCFrame, halfExtents)
+	if not hit then
+		return center, normal, 0
+	end
+	local correction = math.max(depth - (slop or 0), 0)
+	return center + normal * correction, normal, depth
+end
+
+function MathUtils.collisionClipVelocity(velocity: Vector3, normal: Vector3, overbounce: number?): Vector3
+	local n = MathUtils.safeUnit(normal, Vector3.yAxis)
+	local backoff = velocity:Dot(n) * (overbounce or 1)
+	if backoff < 0 then
+		return velocity - n * backoff
+	end
+	return velocity
+end
+
+function MathUtils.collisionSlideVelocity(velocity: Vector3, normal: Vector3): Vector3
+	local n = MathUtils.safeUnit(normal, Vector3.yAxis)
+	return velocity - n * velocity:Dot(n)
+end
+
+function MathUtils.collisionProjectOntoWalkablePlane(velocity: Vector3, groundNormal: Vector3, maxSlopeRadians: number): Vector3
+	local n = MathUtils.safeUnit(groundNormal, Vector3.yAxis)
+	if n:Dot(Vector3.yAxis) < math.cos(maxSlopeRadians) then
+		return velocity
+	end
+	return MathUtils.collisionSlideVelocity(velocity, n)
+end
+
+function MathUtils.collisionIsWalkableNormal(normal: Vector3, maxSlopeRadians: number): boolean
+	local n = MathUtils.safeUnit(normal, Vector3.yAxis)
+	return n:Dot(Vector3.yAxis) >= math.cos(maxSlopeRadians)
+end
+
+function MathUtils.collisionGroundSnap(position: Vector3, velocity: Vector3, groundPoint: Vector3, groundNormal: Vector3, snapDistance: number, maxSlopeRadians: number): (boolean, Vector3, Vector3)
+	local n = MathUtils.safeUnit(groundNormal, Vector3.yAxis)
+	local distance = n:Dot(position - groundPoint)
+	if distance < 0 or distance > snapDistance then
+		return false, position, velocity
+	end
+	if not MathUtils.collisionIsWalkableNormal(n, maxSlopeRadians) then
+		return false, position, velocity
+	end
+	local snappedPosition = position - n * distance
+	local snappedVelocity = MathUtils.collisionSlideVelocity(velocity, n)
+	return true, snappedPosition, snappedVelocity
+end
+
+function MathUtils.collisionContactCFrame(point: Vector3, normal: Vector3, tangentHint: Vector3?): CFrame
+	local n = MathUtils.safeUnit(normal, Vector3.yAxis)
+	local tangent = tangentHint or Vector3.xAxis
+	tangent = tangent - n * tangent:Dot(n)
+	if tangent.Magnitude < EPSILON then
+		local basisTangent, _ = MathUtils.orthonormalBasisFromNormal(n)
+		tangent = basisTangent
+	else
+		tangent = tangent.Unit
+	end
+	local bitangent = n:Cross(tangent).Unit
+	return CFrame.fromMatrix(point, tangent, n, -bitangent)
+end
+
+function MathUtils.collisionAverageNormals(normals: { Vector3 }, fallback: Vector3?): Vector3
+	local sum = Vector3.zero
+	for _, normal in ipairs(normals) do
+		sum += MathUtils.safeUnit(normal, Vector3.zero)
+	end
+	return MathUtils.safeUnit(sum, fallback or Vector3.yAxis)
+end
+
+function MathUtils.collisionSortContactsByDepth(contacts: { Contact }): { Contact }
+	local function getDepth(contact: Contact): number
+		local depth = contact.depth
+		if depth == nil then
+			return 0
+		end
+		return depth
+	end
+	table.sort(contacts, function(a: Contact, b: Contact)
+		return getDepth(a) > getDepth(b)
+	end)
+	return contacts
+end
+
+function MathUtils.cameraResolveObstruction(desiredPosition: Vector3, focusPoint: Vector3, hitPosition: Vector3, hitNormal: Vector3, radius: number, padding: number?): Vector3
+	local n = MathUtils.safeUnit(hitNormal, Vector3.yAxis)
+	local safePadding = padding or 0.05
+	local pushed = hitPosition + n * (radius + safePadding)
+	local focusToDesired = desiredPosition - focusPoint
+	local focusToPushed = pushed - focusPoint
+	if focusToPushed:Dot(focusToDesired) <= 0 then
+		return focusPoint
+	end
+	if focusToPushed.Magnitude > focusToDesired.Magnitude then
+		return desiredPosition
+	end
+	return pushed
+end
+
+function MathUtils.cameraBoomCollisionCFrame(focusPoint: Vector3, desiredPosition: Vector3, resolvedPosition: Vector3, up: Vector3?): CFrame
+	local safeUp = MathUtils.safeUnit(up or Vector3.yAxis, Vector3.yAxis)
+	if (focusPoint - resolvedPosition).Magnitude < EPSILON then
+		resolvedPosition = focusPoint - Vector3.zAxis * EPSILON
+	end
+	return CFrame.lookAt(resolvedPosition, focusPoint, safeUp)
+end
+
+function MathUtils.cameraClipNearPlane(cameraCFrame: CFrame, nearDistance: number, halfExtents: Vector2): { Vector3 }
+	local center = cameraCFrame.Position + cameraCFrame.LookVector * nearDistance
+	local right = cameraCFrame.RightVector * halfExtents.X
+	local up = cameraCFrame.UpVector * halfExtents.Y
+	return {
+		center - right - up,
+		center + right - up,
+		center + right + up,
+		center - right + up,
+	}
+end
+
+function MathUtils.cameraSmoothObstructionDistance(currentDistance: number, targetDistance: number, velocity: number, retractSmoothTime: number, expandSmoothTime: number, dt: number): (number, number)
+	local smoothTime = if targetDistance < currentDistance then retractSmoothTime else expandSmoothTime
+	return cameraDampScalar(currentDistance, targetDistance, velocity, smoothTime, dt)
+end
+
+function MathUtils.cameraCalculateCollisionProbeRadius(verticalFovRadians: number, nearDistance: number, aspect: number, minRadius: number?): number
+	local extents = MathUtils.cameraViewportHalfExtentsAtDistance(nearDistance, verticalFovRadians, aspect)
+	return math.max(minRadius or 0, math.sqrt(extents.X * extents.X + extents.Y * extents.Y))
+end
+
+function MathUtils.cameraShortestYawDelta(currentYaw: number, targetYaw: number): number
+	return MathUtils.angleDifference(currentYaw, targetYaw)
+end
+
+function MathUtils.cameraYawFromDirection(direction: Vector3): number
+	local dir = MathUtils.safeUnit(Vector3.new(direction.X, 0, direction.Z), Vector3.new(0, 0, -1))
+	return math.atan2(-dir.X, -dir.Z)
+end
+
+function MathUtils.cameraPitchFromDirection(direction: Vector3): number
+	local dir = MathUtils.safeUnit(direction, Vector3.new(0, 0, -1))
+	return math.asin(math.clamp(dir.Y, -1, 1))
+end
+
+function MathUtils.cameraYawPitchFromDirection(direction: Vector3): (number, number)
+	return MathUtils.cameraYawFromDirection(direction), MathUtils.cameraPitchFromDirection(direction)
+end
+
+function MathUtils.cameraDirectionFromYawPitch(yaw: number, pitch: number): Vector3
+	local cp = math.cos(pitch)
+	return Vector3.new(-math.sin(yaw) * cp, math.sin(pitch), -math.cos(yaw) * cp)
+end
+
+function MathUtils.cameraCFrameFromYawPitch(position: Vector3, yaw: number, pitch: number, roll: number?): CFrame
+	local direction = MathUtils.cameraDirectionFromYawPitch(yaw, pitch)
+	local cf = CFrame.lookAt(position, position + direction, Vector3.yAxis)
+	if roll and math.abs(roll) > EPSILON then
+		cf *= CFrame.Angles(0, 0, roll)
+	end
+	return cf
+end
+
+function MathUtils.cameraOrbitPosition(target: Vector3, yaw: number, pitch: number, distance: number, minDistance: number?, maxDistance: number?): Vector3
+	local d = cameraClampDistance(distance, minDistance, maxDistance)
+	local direction = MathUtils.cameraDirectionFromYawPitch(yaw, MathUtils.cameraClampPitch(pitch))
+	return target - direction * d
+end
+
+function MathUtils.cameraOrbitCFrame(target: Vector3, yaw: number, pitch: number, distance: number, minDistance: number?, maxDistance: number?): CFrame
+	local position = MathUtils.cameraOrbitPosition(target, yaw, pitch, distance, minDistance, maxDistance)
+	return CFrame.lookAt(position, target, Vector3.yAxis)
+end
+
+function MathUtils.cameraFollowCFrame(targetCFrame: CFrame, localOffset: Vector3, focusOffset: Vector3?): CFrame
+	local position = targetCFrame:PointToWorldSpace(localOffset)
+	local focus = targetCFrame:PointToWorldSpace(focusOffset or Vector3.zero)
+	return CFrame.lookAt(position, focus, Vector3.yAxis)
+end
+
+function MathUtils.cameraFrameBoundsDistance(boundsSize: Vector3, verticalFovRadians: number, aspect: number, padding: number?): number
+	local pad = padding or 1
+	local safeAspect = math.max(aspect, EPSILON)
+	local halfHeight = math.max(boundsSize.Y, EPSILON) * 0.5 * pad
+	local halfWidth = math.max(boundsSize.X, EPSILON) * 0.5 * pad
+	local halfDepth = math.max(boundsSize.Z, 0) * 0.5 * pad
+	local tanY = math.tan(math.max(verticalFovRadians, EPSILON) * 0.5)
+	local tanX = tanY * safeAspect
+	local distY = halfHeight / math.max(tanY, EPSILON)
+	local distX = halfWidth / math.max(tanX, EPSILON)
+	return math.max(distX, distY) + halfDepth
+end
+
+function MathUtils.cameraFitAABB(minPoint: Vector3, maxPoint: Vector3, direction: Vector3, verticalFovRadians: number, aspect: number, padding: number?): CFrame
+	local center = (minPoint + maxPoint) * 0.5
+	local size = maxPoint - minPoint
+	local dist = MathUtils.cameraFrameBoundsDistance(size, verticalFovRadians, aspect, padding)
+	local dir = MathUtils.safeUnit(direction, Vector3.new(0, 0, -1))
+	local position = center - dir * dist
+	return CFrame.lookAt(position, center, Vector3.yAxis)
+end
+
+function MathUtils.cameraViewportHalfExtentsAtDistance(distance: number, verticalFovRadians: number, aspect: number): Vector2
+	local halfHeight = math.tan(verticalFovRadians * 0.5) * math.max(distance, 0)
+	return Vector2.new(halfHeight * math.max(aspect, EPSILON), halfHeight)
+end
+
+function MathUtils.cameraDeadZoneOffset(screenOffset: Vector2, deadZone: Vector2, maxOffset: Vector2): Vector2
+	local x = 0
+	local y = 0
+	local absX = math.abs(screenOffset.X)
+	local absY = math.abs(screenOffset.Y)
+	if absX > deadZone.X then
+		x = MathUtils.sign(screenOffset.X) * math.min(absX - deadZone.X, maxOffset.X)
+	end
+	if absY > deadZone.Y then
+		y = MathUtils.sign(screenOffset.Y) * math.min(absY - deadZone.Y, maxOffset.Y)
+	end
+	return Vector2.new(x, y)
+end
+
+function MathUtils.cameraCriticallyDampedPosition(current: Vector3, target: Vector3, velocity: Vector3, smoothTime: number, dt: number): (Vector3, Vector3)
+	return cameraDampVector3(current, target, velocity, smoothTime, dt)
+end
+
+function MathUtils.cameraCriticallyDampedAngle(current: number, target: number, velocity: number, smoothTime: number, dt: number): (number, number)
+	local delta = MathUtils.angleDifference(current, target)
+	local adjustedTarget = current + delta
+	local nextValue, nextVelocity = cameraDampScalar(current, adjustedTarget, velocity, smoothTime, dt)
+	return MathUtils.normalizeAngle(nextValue), nextVelocity
+end
+
+function MathUtils.cameraCriticallyDampedYawPitch(currentYaw: number, currentPitch: number, targetYaw: number, targetPitch: number, yawVelocity: number, pitchVelocity: number, smoothTime: number, dt: number): (number, number, number, number)
+	local nextYaw, nextYawVelocity = MathUtils.cameraCriticallyDampedAngle(currentYaw, targetYaw, yawVelocity, smoothTime, dt)
+	local nextPitch, nextPitchVelocity = cameraDampScalar(currentPitch, targetPitch, pitchVelocity, smoothTime, dt)
+	return nextYaw, MathUtils.cameraClampPitch(nextPitch), nextYawVelocity, nextPitchVelocity
+end
+
+function MathUtils.cameraSmoothCFrame(current: CFrame, target: CFrame, positionSmoothTime: number, rotationAlpha: number, velocity: Vector3, dt: number): (CFrame, Vector3)
+	local nextPosition, nextVelocity = cameraDampVector3(current.Position, target.Position, velocity, positionSmoothTime, dt)
+	local alpha = MathUtils.saturate(rotationAlpha)
+	local rotation = (current - current.Position):Lerp(target - target.Position, alpha)
+	return CFrame.new(nextPosition) * rotation, nextVelocity
+end
+
+function MathUtils.cameraLookAheadTarget(position: Vector3, velocity: Vector3, leadTime: number, maxLeadDistance: number): Vector3
+	local lead = velocity * math.max(leadTime, 0)
+	local mag = lead.Magnitude
+	if mag > maxLeadDistance and mag > EPSILON then
+		lead = lead / mag * maxLeadDistance
+	end
+	return position + lead
+end
+
+function MathUtils.cameraShoulderPosition(targetCFrame: CFrame, shoulderOffset: number, verticalOffset: number, backDistance: number): Vector3
+	return targetCFrame.Position + targetCFrame.RightVector * shoulderOffset + Vector3.yAxis * verticalOffset - targetCFrame.LookVector * backDistance
+end
+
+function MathUtils.cameraOverShoulderCFrame(targetCFrame: CFrame, shoulderOffset: number, verticalOffset: number, backDistance: number, focusDistance: number): CFrame
+	local position = MathUtils.cameraShoulderPosition(targetCFrame, shoulderOffset, verticalOffset, backDistance)
+	local focus = targetCFrame.Position + Vector3.yAxis * verticalOffset + targetCFrame.LookVector * focusDistance
+	return CFrame.lookAt(position, focus, Vector3.yAxis)
+end
+
+function MathUtils.cameraApplyRoll(cameraCFrame: CFrame, roll: number): CFrame
+	return cameraCFrame * CFrame.Angles(0, 0, roll)
+end
+
+function MathUtils.cameraLocalPan(cameraCFrame: CFrame, pan: Vector2, distance: number, verticalFovRadians: number, aspect: number): Vector3
+	local extents = MathUtils.cameraViewportHalfExtentsAtDistance(distance, verticalFovRadians, aspect)
+	return cameraCFrame.RightVector * (pan.X * extents.X) + cameraCFrame.UpVector * (pan.Y * extents.Y)
+end
+
+function MathUtils.cameraScreenShakeOffset(seed: number, time: number, amplitude: Vector3, frequency: number): Vector3
+	local t = time * frequency
+	local x = math.noise(seed, t, 0) * amplitude.X
+	local y = math.noise(seed, 0, t) * amplitude.Y
+	local z = math.noise(0, seed, t) * amplitude.Z
+	return Vector3.new(x, y, z)
+end
+
+function MathUtils.cameraFovForHeight(height: number, distance: number): number
+	return 2 * math.atan(math.max(height, EPSILON) * 0.5 / math.max(distance, EPSILON))
+end
+
+function MathUtils.cameraDollyDistanceForFov(height: number, verticalFovRadians: number): number
+	return math.max(height, EPSILON) * 0.5 / math.max(math.tan(verticalFovRadians * 0.5), EPSILON)
+end
+
+function MathUtils.cameraRayDirectionFromViewportUnit(cameraCFrame: CFrame, unitPoint: Vector2, verticalFovRadians: number, aspect: number): Vector3
+	local tanY = math.tan(verticalFovRadians * 0.5)
+	local x = (unitPoint.X * 2 - 1) * tanY * aspect
+	local y = (1 - unitPoint.Y * 2) * tanY
+	local localDirection = MathUtils.safeUnit(Vector3.new(x, y, -1), Vector3.new(0, 0, -1))
+	return cameraCFrame:VectorToWorldSpace(localDirection)
+end
+
+function MathUtils.remap(
+	value: number,
+	low1: number, high1: number,
+	low2: number, high2: number
+): number
+	if math.abs(high1 - low1) < EPSILON then
+		return low2
+	end
+	return low2 + (value - low1) * (high2 - low2) / (high1 - low1)
+end
+
+function MathUtils.clamp(value: number, min: number, max: number): number
+	return value < min and min or value > max and max or value
+end
+
+function MathUtils.lerp(a: number, b: number, t: number): number
+	return a + (b - a) * t
+end
+
+function MathUtils.inverseLerp(a: number, b: number, value: number): number
+	if math.abs(b - a) < EPSILON then
+		return 0
+	end
+	return (value - a) / (b - a)
+end
+
+function MathUtils.pingPong(t: number, length: number): number
+	t = t % (length * 2)
+	return t > length and length * 2 - t or t
+end
+
+function MathUtils.repeatValue(t: number, length: number): number
+	return t - math.floor(t / length) * length
+end
+
+function MathUtils.deltaAngle(current: number, target: number): number
+	return MathUtils.angleDifference(target, current)
+end
+
+function MathUtils.moveTowards(current: number, target: number, maxDelta: number): number
+	local diff = target - current
+	if math.abs(diff) <= maxDelta then
+		return target
+	end
+	return current + (diff > 0 and maxDelta or -maxDelta)
+end
+
+function MathUtils.moveTowardsAngle(current: number, target: number, maxDelta: number): number
+	local diff = MathUtils.angleDifference(target, current)
+	if math.abs(diff) <= maxDelta then
+		return target
+	end
+	return MathUtils.normalizeAngle(current + (diff > 0 and maxDelta or -maxDelta))
+end
+
+function MathUtils.sign(x: number): number
+	return x > 0 and 1 or x < 0 and -1 or 0
+end
+
+function MathUtils.round(value: number, decimals: number?): number
+	if not decimals then
+		return value >= 0 and math.floor(value + 0.5) or math.ceil(value - 0.5)
+	end
+	local mult = 10 ^ decimals
+	return math.floor(value * mult + 0.5) / mult
+end
+
+function MathUtils.randomInRange(min: number, max: number): number
+	return min + math.random() * (max - min)
+end
+
+function MathUtils.randomIntInRange(min: number, max: number): number
+	return math.random(min, max)
+end
+
+function MathUtils.randomVector(scale: number): Vector3
+	return Vector3.new(
+		(math.random() * 2 - 1) * scale,
+		(math.random() * 2 - 1) * scale,
+		(math.random() * 2 - 1) * scale
+	)
+end
+
+function MathUtils.randomUnitVector(): Vector3
+	local theta = math.random() * TWO_PI
+	local phi = math.acos(2 * math.random() - 1)
+	local sinPhi = math.sin(phi)
+	return Vector3.new(
+		sinPhi * math.cos(theta),
+		sinPhi * math.sin(theta),
+		math.cos(phi)
+	)
+end
+
+function MathUtils.randomRotation(): (number, number, number, number)
+	local u1, u2, u3 = math.random(), math.random(), math.random()
+	local x = math.sqrt(1 - u1) * math.sin(TWO_PI * u2)
+	local y = math.sqrt(1 - u1) * math.cos(TWO_PI * u2)
+	local z = math.sqrt(u1) * math.sin(TWO_PI * u3)
+	local w = math.sqrt(u1) * math.cos(TWO_PI * u3)
+	return x, y, z, w
+end
+
+function MathUtils.projectPointOnLine(
+	px: number, py: number, pz: number,
+	lx: number, ly: number, lz: number,
+	dx: number, dy: number, dz: number
+): (number, number, number, number)
+	local dirLenSq = dx * dx + dy * dy + dz * dz
+	if dirLenSq < EPSILON then
+		return lx, ly, lz, 0
+	end
+	local vx, vy, vz = px - lx, py - ly, pz - lz
+	local t = (vx * dx + vy * dy + vz * dz) / dirLenSq
+	return lx + dx * t, ly + dy * t, lz + dz * t, t
+end
+
+function MathUtils.distanceToLine(
+	px: number, py: number, pz: number,
+	lx: number, ly: number, lz: number,
+	dx: number, dy: number, dz: number
+): number
+	local projx, projy, projz = MathUtils.projectPointOnLine(
+		px, py, pz, lx, ly, lz, dx, dy, dz
+	)
+	local vx, vy, vz = px - projx, py - projy, pz - projz
+	return math.sqrt(vx * vx + vy * vy + vz * vz)
+end
+
+function MathUtils.solveQuadratic(a: number, b: number, c: number): { number }?
+	if math.abs(a) < EPSILON then
+		if math.abs(b) < EPSILON then
+			return nil
+		end
+		return { -c / b }
+	end
+
+	local discriminant = b * b - 4 * a * c
+	if discriminant < -EPSILON then
+		return nil
+	end
+	if discriminant < EPSILON then
+		return { -b / (2 * a) }
+	end
+	local sqrtDisc = math.sqrt(discriminant)
+	return {
+		(-b + sqrtDisc) / (2 * a),
+		(-b - sqrtDisc) / (2 * a)
+	}
+end
+
+function MathUtils.solveCubic(a: number, b: number, c: number, d: number): { number }?
+	if math.abs(a) < EPSILON then
+		return MathUtils.solveQuadratic(b, c, d)
+	end
+
+	local b1 = b / a
+	local c1 = c / a
+	local d1 = d / a
+
+	local p = (3 * c1 - b1 * b1) / 3
+	local q = (2 * b1 * b1 * b1 - 9 * b1 * c1 + 27 * d1) / 27
+
+	local discriminant = q * q / 4 + p * p * p / 27
+
+	if discriminant > EPSILON then
+		local sqrtDisc = math.sqrt(discriminant)
+		local u = cubeRoot(-q / 2 + sqrtDisc)
+		local v = cubeRoot(-q / 2 - sqrtDisc)
+		return { u + v - b1 / 3 }
+	elseif discriminant < -EPSILON then
+		local r = math.sqrt(-p * p * p / 27)
+		local phi = math.acos(math.min(1, math.max(-1, -q / (2 * r))))
+		local roots = {}
+		for k = 0, 2 do
+			roots[k + 1] = 2 * (-p / 3) ^ 0.5 * math.cos((phi + 2 * k * math.pi) / 3) - b1 / 3
+		end
+		return roots
+	else
+		local u = cubeRoot(-q / 2)
+		local root1 = 2 * u - b1 / 3
+		local root2 = -u - b1 / 3
+		return { root1, root2 }
+	end
+end
+
+function MathUtils.gaussian(x: number, mean: number, stdDev: number): number
+	local exponent = -0.5 * ((x - mean) / stdDev) ^ 2
+	return math.exp(exponent) / (stdDev * math.sqrt(TWO_PI))
+end
+
+function MathUtils.sigmoid(x: number, gain: number?, center: number?): number
+	gain = gain or 1
+	center = center or 0
+	return 1 / (1 + math.exp(-gain * (x - center)))
+end
+
+function MathUtils.smoothstep(edge0: number, edge1: number, x: number): number
+	x = MathUtils.clamp((x - edge0) / (edge1 - edge0), 0, 1)
+	return x * x * (3 - 2 * x)
+end
+
+function MathUtils.smootherstep(edge0: number, edge1: number, x: number): number
+	x = MathUtils.clamp((x - edge0) / (edge1 - edge0), 0, 1)
+	return x * x * x * (x * (x * 6 - 15) + 10)
+end
+
+function MathUtils.hermite(
+	p0: number, v0: number,
+	p1: number, v1: number,
+	t: number
+): number
+	local t2 = t * t
+	local t3 = t2 * t
+	local h00 = 2 * t3 - 3 * t2 + 1
+	local h10 = t3 - 2 * t2 + t
+	local h01 = -2 * t3 + 3 * t2
+	local h11 = t3 - t2
+	return h00 * p0 + h10 * v0 + h01 * p1 + h11 * v1
+end
+
+function MathUtils.catmullRom(
+	p0: number, p1: number, p2: number, p3: number,
+	t: number
+): number
+	local t2 = t * t
+	local t3 = t2 * t
+	return 0.5 * (
+		(-t3 + 2 * t2 - t) * p0 +
+			(3 * t3 - 5 * t2 + 2) * p1 +
+			(-3 * t3 + 4 * t2 + t) * p2 +
+			(t3 - t2) * p3
+	)
+end
+
+function MathUtils.bezier(
+	p0: number, p1: number, p2: number, p3: number,
+	t: number
+): number
+	local mt = 1 - t
+	local mt2 = mt * mt
+	local t2 = t * t
+	return mt2 * mt * p0 + 3 * mt2 * t * p1 + 3 * mt * t2 * p2 + t2 * t * p3
+end
+
+function MathUtils.bezierDerivative(
+	p0: number, p1: number, p2: number, p3: number,
+	t: number
+): number
+	local mt = 1 - t
+	return 3 * (p1 - p0) * mt * mt +
+		6 * (p2 - p1) * mt * t +
+		3 * (p3 - p2) * t * t
+end
+
+function MathUtils.quadraticBezier(
+	p0: number, p1: number, p2: number,
+	t: number
+): number
+	local mt = 1 - t
+	return mt * mt * p0 + 2 * mt * t * p1 + t * t * p2
+end
+
+function MathUtils.fresnelIn(t: number): number
+	return 1 - math.cos(t * HALF_PI)
+end
+
+function MathUtils.fresnelOut(t: number): number
+	return math.sin(t * HALF_PI)
+end
+
+function MathUtils.fresnelInOut(t: number): number
+	return (1 - math.cos(t * math.pi)) * 0.5
+end
+
+function MathUtils.elasticIn(t: number, amplitude: number?, period: number?): number
+	if t <= 0 then return 0 end
+	if t >= 1 then return 1 end
+	amplitude = amplitude or 1
+	period = period or 0.3
+	local s = period / (TWO_PI) * math.asin(1 / amplitude)
+	return -(amplitude * 2 ^ (10 * (t - 1)) * math.sin((t - 1 - s) * TWO_PI / period))
+end
+
+function MathUtils.elasticOut(t: number, amplitude: number?, period: number?): number
+	if t <= 0 then return 0 end
+	if t >= 1 then return 1 end
+	amplitude = amplitude or 1
+	period = period or 0.3
+	local s = period / (TWO_PI) * math.asin(1 / amplitude)
+	return amplitude * 2 ^ (-10 * t) * math.sin((t - s) * TWO_PI / period) + 1
+end
+
+function MathUtils.bounceOut(t: number): number
+	if t < 1 / 2.75 then
+		return 7.5625 * t * t
+	elseif t < 2 / 2.75 then
+		t = t - 1.5 / 2.75
+		return 7.5625 * t * t + 0.75
+	elseif t < 2.5 / 2.75 then
+		t = t - 2.25 / 2.75
+		return 7.5625 * t * t + 0.9375
+	else
+		t = t - 2.625 / 2.75
+		return 7.5625 * t * t + 0.984375
+	end
+end
+
+function MathUtils.bounceIn(t: number): number
+	return 1 - MathUtils.bounceOut(1 - t)
+end
+
+function MathUtils.backIn(t: number, overshoot: number?): number
+	overshoot = overshoot or 1.70158
+	return t * t * ((overshoot + 1) * t - overshoot)
+end
+
+function MathUtils.backOut(t: number, overshoot: number?): number
+	overshoot = overshoot or 1.70158
+	t = t - 1
+	return t * t * ((overshoot + 1) * t + overshoot) + 1
+end
+
+function MathUtils.linearToGamma(value: number): number
+	return value <= 0.0031308 and 12.92 * value or 1.055 * value ^ (1 / 2.4) - 0.055
+end
+
+function MathUtils.gammaToLinear(value: number): number
+	return value <= 0.04045 and value / 12.92 or ((value + 0.055) / 1.055) ^ 2.4
+end
+
+function MathUtils.colorLerp(c1: Color3, c2: Color3, t: number): Color3
+	return Color3.new(
+		MathUtils.lerp(c1.R, c2.R, t),
+		MathUtils.lerp(c1.G, c2.G, t),
+		MathUtils.lerp(c1.B, c2.B, t)
+	)
+end
+
+function MathUtils.colorToHSV(color: Color3): (number, number, number)
+	local r, g, b = color.R, color.G, color.B
+	local max = math.max(r, g, b)
+	local min = math.min(r, g, b)
+	local delta = max - min
+
+	local h, s, v = 0, 0, max
+
+	if delta > EPSILON then
+		s = delta / max
+		if max == r then
+			h = ((g - b) / delta) % 6
+		elseif max == g then
+			h = (b - r) / delta + 2
+		else
+			h = (r - g) / delta + 4
+		end
+		h = h * 60
+	end
+
+	return h, s, v
+end
+
+function MathUtils.hsvToColor(h: number, s: number, v: number): Color3
+	local c = v * s
+	local hp = h / 60
+	local x = c * (1 - math.abs(hp % 2 - 1))
+
+	local r = 0
+	local g = 0
+	local b = 0
+	if hp < 1 then
+		r, g, b = c, x, 0
+	elseif hp < 2 then
+		r, g, b = x, c, 0
+	elseif hp < 3 then
+		r, g, b = 0, c, x
+	elseif hp < 4 then
+		r, g, b = 0, x, c
+	elseif hp < 5 then
+		r, g, b = x, 0, c
+	else
+		r, g, b = c, 0, x
+	end
+
+	local m = v - c
+	return Color3.new(r + m, g + m, b + m)
+end
+
+function MathUtils.closestPointsOnSegments(a1: Vector3, a2: Vector3, b1: Vector3, b2: Vector3): (Vector3, Vector3)
+	local d1 = a2 - a1
+	local d2 = b2 - b1
+	local r = a1 - b1
+	local a = d1:Dot(d1)
+	local e = d2:Dot(d2)
+	local f = d2:Dot(r)
+	local s, t = 0, 0
+	local c = d1:Dot(r)
+	local b = d1:Dot(d2)
+	local denom = a * e - b * b
+	if denom > 1e-6 then
+		s = math.clamp((b * f - c * e) / denom, 0, 1)
+		t = math.clamp((a * f - b * c) / denom, 0, 1)
+	end
+	local p1 = a1 + d1 * s
+	local p2 = b1 + d2 * t
+	return p1, p2
+end
+
+function MathUtils.isFinite(value: number): boolean
+	return value == value and value ~= math.huge and value ~= -math.huge
+end
+
+function MathUtils.approximately(a: number, b: number, epsilon: number?): boolean
+	return math.abs(a - b) <= (epsilon or EPSILON)
+end
+
+function MathUtils.safeDivide(numerator: number, denominator: number, fallback: number?): number
+	if math.abs(denominator) < EPSILON then
+		return fallback or 0
+	end
+	return numerator / denominator
+end
+
+function MathUtils.saturate(value: number): number
+	return value < 0 and 0 or value > 1 and 1 or value
+end
+
+function MathUtils.snap(value: number, step: number): number
+	if math.abs(step) < EPSILON then
+		return value
+	end
+	return math.floor(value / step + 0.5) * step
+end
+
+function MathUtils.wrap(value: number, minValue: number, maxValue: number): number
+	local range = maxValue - minValue
+	if math.abs(range) < EPSILON then
+		return minValue
+	end
+	return ((value - minValue) % range) + minValue
+end
+
+function MathUtils.safeUnit(vector: Vector3, fallback: Vector3?): Vector3
+	local mag = vector.Magnitude
+	if mag < EPSILON then
+		return fallback or Vector3.zero
+	end
+	return vector / mag
+end
+
+function MathUtils.clampMagnitude(vector: Vector3, maxMagnitude: number): Vector3
+	local magSq = vector:Dot(vector)
+	local maxSq = maxMagnitude * maxMagnitude
+	if magSq <= maxSq or magSq < EPSILON then
+		return vector
+	end
+	return vector * (maxMagnitude / math.sqrt(magSq))
+end
+
+function MathUtils.moveTowardsVector(current: Vector3, target: Vector3, maxDelta: number): Vector3
+	local delta = target - current
+	local mag = delta.Magnitude
+	if mag <= maxDelta or mag < EPSILON then
+		return target
+	end
+	return current + delta / mag * maxDelta
+end
+
+function MathUtils.projectVector(vector: Vector3, onto: Vector3): Vector3
+	local denom = onto:Dot(onto)
+	if denom < EPSILON then
+		return Vector3.zero
+	end
+	return onto * (vector:Dot(onto) / denom)
+end
+
+function MathUtils.rejectVector(vector: Vector3, normal: Vector3): Vector3
+	return vector - MathUtils.projectVector(vector, normal)
+end
+
+function MathUtils.slideVector(vector: Vector3, normal: Vector3): Vector3
+	local n = MathUtils.safeUnit(normal, Vector3.yAxis)
+	return vector - n * vector:Dot(n)
+end
+
+function MathUtils.angleBetweenVectors(a: Vector3, b: Vector3): number
+	local denom = a.Magnitude * b.Magnitude
+	if denom < EPSILON then
+		return 0
+	end
+	return math.acos(math.clamp(a:Dot(b) / denom, -1, 1))
+end
+
+function MathUtils.signedAngleBetweenVectors(a: Vector3, b: Vector3, axis: Vector3): number
+	local angle = MathUtils.angleBetweenVectors(a, b)
+	local sign = MathUtils.sign(axis:Dot(a:Cross(b)))
+	return angle * sign
+end
+
+function MathUtils.closestPointOnSegment(point: Vector3, a: Vector3, b: Vector3): (Vector3, number)
+	local ab = b - a
+	local denom = ab:Dot(ab)
+	if denom < EPSILON then
+		return a, 0
+	end
+	local t = math.clamp((point - a):Dot(ab) / denom, 0, 1)
+	return a + ab * t, t
+end
+
+function MathUtils.distanceSquaredPointSegment(point: Vector3, a: Vector3, b: Vector3): number
+	local closest, _segmentT = MathUtils.closestPointOnSegment(point, a, b)
+	local delta = point - closest
+	return delta:Dot(delta)
+end
+
+function MathUtils.closestPointOnAABB(point: Vector3, minPoint: Vector3, maxPoint: Vector3): Vector3
+	return Vector3.new(
+		math.clamp(point.X, minPoint.X, maxPoint.X),
+		math.clamp(point.Y, minPoint.Y, maxPoint.Y),
+		math.clamp(point.Z, minPoint.Z, maxPoint.Z)
+	)
+end
+
+function MathUtils.pointInAABB(point: Vector3, minPoint: Vector3, maxPoint: Vector3): boolean
+	return point.X >= minPoint.X and point.X <= maxPoint.X and
+		point.Y >= minPoint.Y and point.Y <= maxPoint.Y and
+		point.Z >= minPoint.Z and point.Z <= maxPoint.Z
+end
+
+function MathUtils.closestPointOnOBB(point: Vector3, boxCFrame: CFrame, halfExtents: Vector3): Vector3
+	local localPoint = boxCFrame:PointToObjectSpace(point)
+	local clamped = Vector3.new(
+		math.clamp(localPoint.X, -halfExtents.X, halfExtents.X),
+		math.clamp(localPoint.Y, -halfExtents.Y, halfExtents.Y),
+		math.clamp(localPoint.Z, -halfExtents.Z, halfExtents.Z)
+	)
+	return boxCFrame:PointToWorldSpace(clamped)
+end
+
+function MathUtils.pointInOBB(point: Vector3, boxCFrame: CFrame, halfExtents: Vector3): boolean
+	local localPoint = boxCFrame:PointToObjectSpace(point)
+	return localPoint.X >= -halfExtents.X and localPoint.X <= halfExtents.X and
+		localPoint.Y >= -halfExtents.Y and localPoint.Y <= halfExtents.Y and
+		localPoint.Z >= -halfExtents.Z and localPoint.Z <= halfExtents.Z
+end
+
+function MathUtils.raySphereIntersection(origin: Vector3, direction: Vector3, center: Vector3, radius: number): (boolean, number?, number?)
+	local m = origin - center
+	local a = direction:Dot(direction)
+	if a < EPSILON then
+		return false, nil, nil
+	end
+	local b = 2 * m:Dot(direction)
+	local c = m:Dot(m) - radius * radius
+	local roots = MathUtils.solveQuadratic(a, b, c)
+	if not roots then
+		return false, nil, nil
+	end
+	if #roots == 1 then
+		return true, roots[1], roots[1]
+	end
+	return true, math.min(roots[1], roots[2]), math.max(roots[1], roots[2])
+end
+
+function MathUtils.aabbOverlap(minA: Vector3, maxA: Vector3, minB: Vector3, maxB: Vector3): boolean
+	return minA.X <= maxB.X and maxA.X >= minB.X and
+		minA.Y <= maxB.Y and maxA.Y >= minB.Y and
+		minA.Z <= maxB.Z and maxA.Z >= minB.Z
+end
+
+function MathUtils.aabbIntersectionDepth(minA: Vector3, maxA: Vector3, minB: Vector3, maxB: Vector3): Vector3?
+	if not MathUtils.aabbOverlap(minA, maxA, minB, maxB) then
+		return nil
+	end
+	return Vector3.new(
+		math.min(maxA.X, maxB.X) - math.max(minA.X, minB.X),
+		math.min(maxA.Y, maxB.Y) - math.max(minA.Y, minB.Y),
+		math.min(maxA.Z, maxB.Z) - math.max(minA.Z, minB.Z)
+	)
+end
+
+function MathUtils.expandAABB(minPoint: Vector3, maxPoint: Vector3, amount: number): (Vector3, Vector3)
+	local expand = Vector3.new(amount, amount, amount)
+	return minPoint - expand, maxPoint + expand
+end
+
+function MathUtils.quaternionDot(qx1: number, qy1: number, qz1: number, qw1: number, qx2: number, qy2: number, qz2: number, qw2: number): number
+	return qx1 * qx2 + qy1 * qy2 + qz1 * qz2 + qw1 * qw2
+end
+
+function MathUtils.quaternionNormalize(qx: number, qy: number, qz: number, qw: number): (number, number, number, number)
+	local magSq = qx * qx + qy * qy + qz * qz + qw * qw
+	if magSq < EPSILON then
+		return 0, 0, 0, 1
+	end
+	local inv = 1 / math.sqrt(magSq)
+	return qx * inv, qy * inv, qz * inv, qw * inv
+end
+
+function MathUtils.quaternionConjugate(qx: number, qy: number, qz: number, qw: number): (number, number, number, number)
+	return -qx, -qy, -qz, qw
+end
+
+function MathUtils.quaternionInverse(qx: number, qy: number, qz: number, qw: number): (number, number, number, number)
+	local magSq = qx * qx + qy * qy + qz * qz + qw * qw
+	if magSq < EPSILON then
+		return 0, 0, 0, 1
+	end
+	return -qx / magSq, -qy / magSq, -qz / magSq, qw / magSq
+end
+
+function MathUtils.quaternionFromTo(from: Vector3, to: Vector3): (number, number, number, number)
+	local f = MathUtils.safeUnit(from, Vector3.new(0, 0, -1))
+	local t = MathUtils.safeUnit(to, Vector3.new(0, 0, -1))
+	local dot = math.clamp(f:Dot(t), -1, 1)
+	if dot > 1 - EPSILON then
+		return 0, 0, 0, 1
+	end
+	if dot < -1 + EPSILON then
+		local axis = f:Cross(Vector3.new(1, 0, 0))
+		if axis.Magnitude < EPSILON then
+			axis = f:Cross(Vector3.new(0, 1, 0))
+		end
+		axis = axis.Unit
+		return MathUtils.angleAxisToQuaternion(math.pi, axis.X, axis.Y, axis.Z)
+	end
+	local axis = f:Cross(t)
+	local s = math.sqrt((1 + dot) * 2)
+	local invS = 1 / s
+	return MathUtils.quaternionNormalize(axis.X * invS, axis.Y * invS, axis.Z * invS, s * 0.5)
+end
+
+function MathUtils.quaternionIntegrateAngularVelocity(qx: number, qy: number, qz: number, qw: number, angularVelocity: Vector3, dt: number): (number, number, number, number)
+	local ax = angularVelocity.X * dt
+	local ay = angularVelocity.Y * dt
+	local az = angularVelocity.Z * dt
+	local angle = math.sqrt(ax * ax + ay * ay + az * az)
+	if angle < EPSILON then
+		return MathUtils.quaternionNormalize(qx, qy, qz, qw)
+	end
+	local invAngle = 1 / angle
+	local rx, ry, rz, rw = MathUtils.angleAxisToQuaternion(angle, ax * invAngle, ay * invAngle, az * invAngle)
+	local x, y, z, w = MathUtils.quaternionMultiply(qx, qy, qz, qw, rx, ry, rz, rw)
+	return MathUtils.quaternionNormalize(x, y, z, w)
+end
+
+function MathUtils.orthonormalizeCFrame(cf: CFrame): CFrame
+	local position = cf.Position
+	local right = MathUtils.safeUnit(cf.RightVector, Vector3.new(1, 0, 0))
+	local up = cf.UpVector - right * cf.UpVector:Dot(right)
+	up = MathUtils.safeUnit(up, Vector3.new(0, 1, 0))
+	local back = right:Cross(up)
+	if back.Magnitude < EPSILON then
+		back = Vector3.new(0, 0, 1)
+	else
+		back = back.Unit
+	end
+	up = back:Cross(right).Unit
+	return CFrame.fromMatrix(position, right, up, back)
+end
+
+function MathUtils.lookRotation(forward: Vector3, up: Vector3?): CFrame
+	local f = MathUtils.safeUnit(forward, Vector3.new(0, 0, -1))
+	local u = MathUtils.safeUnit(up or Vector3.new(0, 1, 0), Vector3.new(0, 1, 0))
+	local r = u:Cross(f)
+	if r.Magnitude < EPSILON then
+		r = Vector3.new(1, 0, 0)
+	else
+		r = r.Unit
+	end
+	u = f:Cross(r).Unit
+	return CFrame.fromMatrix(Vector3.zero, r, u, -f)
+end
+
+function MathUtils.pointPlaneDistance(point: Vector3, planeNormal: Vector3, planeD: number): number
+	return planeNormal:Dot(point) + planeD
+end
+
+function MathUtils.barycentricCoordinates(point: Vector3, a: Vector3, b: Vector3, c: Vector3): (number, number, number)
+	local v0 = b - a
+	local v1 = c - a
+	local v2 = point - a
+	local d00 = v0:Dot(v0)
+	local d01 = v0:Dot(v1)
+	local d11 = v1:Dot(v1)
+	local d20 = v2:Dot(v0)
+	local d21 = v2:Dot(v1)
+	local denom = d00 * d11 - d01 * d01
+	if math.abs(denom) < EPSILON then
+		return 1, 0, 0
+	end
+	local v = (d11 * d20 - d01 * d21) / denom
+	local w = (d00 * d21 - d01 * d20) / denom
+	local u = 1 - v - w
+	return u, v, w
+end
+
+function MathUtils.pointInTriangle(point: Vector3, a: Vector3, b: Vector3, c: Vector3, epsilon: number?): boolean
+	local e = epsilon or EPSILON
+	local u, v, w = MathUtils.barycentricCoordinates(point, a, b, c)
+	return u >= -e and v >= -e and w >= -e and u <= 1 + e and v <= 1 + e and w <= 1 + e
+end
+
+function MathUtils.closestPointOnTriangle(point: Vector3, a: Vector3, b: Vector3, c: Vector3): Vector3
+	local ab = b - a
+	local ac = c - a
+	local ap = point - a
+	local d1 = ab:Dot(ap)
+	local d2 = ac:Dot(ap)
+	if d1 <= 0 and d2 <= 0 then return a end
+	local bp = point - b
+	local d3 = ab:Dot(bp)
+	local d4 = ac:Dot(bp)
+	if d3 >= 0 and d4 <= d3 then return b end
+	local vc = d1 * d4 - d3 * d2
+	if vc <= 0 and d1 >= 0 and d3 <= 0 then
+		local v = d1 / (d1 - d3)
+		return a + ab * v
+	end
+	local cp = point - c
+	local d5 = ab:Dot(cp)
+	local d6 = ac:Dot(cp)
+	if d6 >= 0 and d5 <= d6 then return c end
+	local vb = d5 * d2 - d1 * d6
+	if vb <= 0 and d2 >= 0 and d6 <= 0 then
+		local w = d2 / (d2 - d6)
+		return a + ac * w
+	end
+	local va = d3 * d6 - d5 * d4
+	if va <= 0 and (d4 - d3) >= 0 and (d5 - d6) >= 0 then
+		local w = (d4 - d3) / ((d4 - d3) + (d5 - d6))
+		return b + (c - b) * w
+	end
+	local denom = 1 / (va + vb + vc)
+	local v = vb * denom
+	local w = vc * denom
+	return a + ab * v + ac * w
+end
+
+function MathUtils.rayTriangleIntersection(origin: Vector3, direction: Vector3, a: Vector3, b: Vector3, c: Vector3, cullBackface: boolean?): (boolean, number?, number?, number?)
+	local edge1 = b - a
+	local edge2 = c - a
+	local pvec = direction:Cross(edge2)
+	local det = edge1:Dot(pvec)
+	if cullBackface then
+		if det < EPSILON then return false, nil, nil, nil end
+	else
+		if math.abs(det) < EPSILON then return false, nil, nil, nil end
+	end
+	local invDet = 1 / det
+	local tvec = origin - a
+	local u = tvec:Dot(pvec) * invDet
+	if u < 0 or u > 1 then return false, nil, nil, nil end
+	local qvec = tvec:Cross(edge1)
+	local v = direction:Dot(qvec) * invDet
+	if v < 0 or u + v > 1 then return false, nil, nil, nil end
+	local t = edge2:Dot(qvec) * invDet
+	if t < 0 then return false, nil, nil, nil end
+	return true, t, u, v
+end
+
+function MathUtils.segmentTriangleIntersection(p0: Vector3, p1: Vector3, a: Vector3, b: Vector3, c: Vector3): (boolean, number?, Vector3?)
+	local delta = p1 - p0
+	local hit, t = MathUtils.rayTriangleIntersection(p0, delta, a, b, c, false)
+	if not hit or not t or t < 0 or t > 1 then
+		return false, nil, nil
+	end
+	return true, t, p0 + delta * t
+end
+
+function MathUtils.rayAABBIntersection(origin: Vector3, direction: Vector3, minPoint: Vector3, maxPoint: Vector3): (boolean, number?, number?)
+	local tMin = -math.huge
+	local tMax = math.huge
+	local function slab(o: number, d: number, mn: number, mx: number): boolean
+		if math.abs(d) < EPSILON then
+			return o >= mn and o <= mx
+		end
+		local invD = 1 / d
+		local t1 = (mn - o) * invD
+		local t2 = (mx - o) * invD
+		if t1 > t2 then t1, t2 = t2, t1 end
+		if t1 > tMin then tMin = t1 end
+		if t2 < tMax then tMax = t2 end
+		return tMin <= tMax
+	end
+	if not slab(origin.X, direction.X, minPoint.X, maxPoint.X) then return false, nil, nil end
+	if not slab(origin.Y, direction.Y, minPoint.Y, maxPoint.Y) then return false, nil, nil end
+	if not slab(origin.Z, direction.Z, minPoint.Z, maxPoint.Z) then return false, nil, nil end
+	if tMax < 0 then return false, nil, nil end
+	return true, tMin, tMax
+end
+
+function MathUtils.rayOBBIntersection(origin: Vector3, direction: Vector3, boxCFrame: CFrame, halfExtents: Vector3): (boolean, number?, number?)
+	local localOrigin = boxCFrame:PointToObjectSpace(origin)
+	local localDirection = boxCFrame:VectorToObjectSpace(direction)
+	return MathUtils.rayAABBIntersection(localOrigin, localDirection, -halfExtents, halfExtents)
+end
+
+function MathUtils.sphereAABBOverlap(center: Vector3, radius: number, minPoint: Vector3, maxPoint: Vector3): (boolean, Vector3, number)
+	local closest = MathUtils.closestPointOnAABB(center, minPoint, maxPoint)
+	local delta = center - closest
+	local distSq = delta:Dot(delta)
+	if distSq > radius * radius then
+		return false, Vector3.zero, 0
+	end
+	local dist = math.sqrt(distSq)
+	if dist > EPSILON then
+		return true, delta / dist, radius - dist
+	end
+	local boxCenter = (minPoint + maxPoint) * 0.5
+	local half = (maxPoint - minPoint) * 0.5
+	local localPoint = center - boxCenter
+	local dx = half.X - math.abs(localPoint.X)
+	local dy = half.Y - math.abs(localPoint.Y)
+	local dz = half.Z - math.abs(localPoint.Z)
+	if dx <= dy and dx <= dz then
+		return true, Vector3.new(MathUtils.sign(localPoint.X), 0, 0), radius + dx
+	elseif dy <= dz then
+		return true, Vector3.new(0, MathUtils.sign(localPoint.Y), 0), radius + dy
+	end
+	return true, Vector3.new(0, 0, MathUtils.sign(localPoint.Z)), radius + dz
+end
+
+function MathUtils.sphereOBBOverlap(center: Vector3, radius: number, boxCFrame: CFrame, halfExtents: Vector3): (boolean, Vector3, number)
+	local localCenter = boxCFrame:PointToObjectSpace(center)
+	local hit, localNormal, depth = MathUtils.sphereAABBOverlap(localCenter, radius, -halfExtents, halfExtents)
+	return hit, boxCFrame:VectorToWorldSpace(localNormal), depth
+end
+
+function MathUtils.capsuleCapsuleDistance(a0: Vector3, a1: Vector3, radiusA: number, b0: Vector3, b1: Vector3, radiusB: number): (number, Vector3, Vector3)
+	local pA, pB = MathUtils.closestPointsOnSegments(a0, a1, b0, b1)
+	local centerDistance = (pA - pB).Magnitude
+	return math.max(0, centerDistance - radiusA - radiusB), pA, pB
+end
+
+function MathUtils.sweptSphereSphereTime(originA: Vector3, radiusA: number, velocityA: Vector3, originB: Vector3, radiusB: number, velocityB: Vector3): (boolean, number?)
+	local relPos = originA - originB
+	local relVel = velocityA - velocityB
+	local radius = radiusA + radiusB
+	local a = relVel:Dot(relVel)
+	local b = 2 * relPos:Dot(relVel)
+	local c = relPos:Dot(relPos) - radius * radius
+	if c <= 0 then
+		return true, 0
+	end
+	local roots = MathUtils.solveQuadratic(a, b, c)
+	if not roots then
+		return false, nil
+	end
+	local best = math.huge
+	for _, root in ipairs(roots) do
+		if root >= 0 and root < best then
+			best = root
+		end
+	end
+	if best == math.huge then
+		return false, nil
+	end
+	return true, best
+end
+
+function MathUtils.hermiteVector(p0: Vector3, v0: Vector3, p1: Vector3, v1: Vector3, t: number): Vector3
+	return Vector3.new(
+		MathUtils.hermite(p0.X, v0.X, p1.X, v1.X, t),
+		MathUtils.hermite(p0.Y, v0.Y, p1.Y, v1.Y, t),
+		MathUtils.hermite(p0.Z, v0.Z, p1.Z, v1.Z, t)
+	)
+end
+
+function MathUtils.catmullRomVector(p0: Vector3, p1: Vector3, p2: Vector3, p3: Vector3, t: number): Vector3
+	return Vector3.new(
+		MathUtils.catmullRom(p0.X, p1.X, p2.X, p3.X, t),
+		MathUtils.catmullRom(p0.Y, p1.Y, p2.Y, p3.Y, t),
+		MathUtils.catmullRom(p0.Z, p1.Z, p2.Z, p3.Z, t)
+	)
+end
+
+function MathUtils.bezierVector(p0: Vector3, p1: Vector3, p2: Vector3, p3: Vector3, t: number): Vector3
+	return Vector3.new(
+		MathUtils.bezier(p0.X, p1.X, p2.X, p3.X, t),
+		MathUtils.bezier(p0.Y, p1.Y, p2.Y, p3.Y, t),
+		MathUtils.bezier(p0.Z, p1.Z, p2.Z, p3.Z, t)
+	)
+end
+
+function MathUtils.bezierDerivativeVector(p0: Vector3, p1: Vector3, p2: Vector3, p3: Vector3, t: number): Vector3
+	return Vector3.new(
+		MathUtils.bezierDerivative(p0.X, p1.X, p2.X, p3.X, t),
+		MathUtils.bezierDerivative(p0.Y, p1.Y, p2.Y, p3.Y, t),
+		MathUtils.bezierDerivative(p0.Z, p1.Z, p2.Z, p3.Z, t)
+	)
+end
+
+function MathUtils.estimateBezierLength(p0: Vector3, p1: Vector3, p2: Vector3, p3: Vector3, steps: number?): number
+	local count = math.max(1, steps or 16)
+	local length = 0
+	local prev = p0
+	for i = 1, count do
+		local t = i / count
+		local current = MathUtils.bezierVector(p0, p1, p2, p3, t)
+		length += (current - prev).Magnitude
+		prev = current
+	end
+	return length
+end
+
+function MathUtils.vectorSmoothDamp(current: Vector3, target: Vector3, velocity: Vector3, smoothTime: number, dt: number, maxSpeed: number?): (Vector3, Vector3)
+	local x, vx = MathUtils.smoothDamp(current.X, target.X, velocity.X, smoothTime, dt, maxSpeed)
+	local y, vy = MathUtils.smoothDamp(current.Y, target.Y, velocity.Y, smoothTime, dt, maxSpeed)
+	local z, vz = MathUtils.smoothDamp(current.Z, target.Z, velocity.Z, smoothTime, dt, maxSpeed)
+	return Vector3.new(x, y, z), Vector3.new(vx, vy, vz)
+end
+
+function MathUtils.applyLinearDrag(velocity: Vector3, drag: number, dt: number): Vector3
+	return velocity * math.exp(-math.max(0, drag) * dt)
+end
+
+function MathUtils.applyQuadraticDrag(velocity: Vector3, drag: number, dt: number): Vector3
+	local speed = velocity.Magnitude
+	if speed < EPSILON then
+		return Vector3.zero
+	end
+	local newSpeed = speed / (1 + math.max(0, drag) * speed * dt)
+	return velocity * (newSpeed / speed)
+end
+
+function MathUtils.solveBallisticArc(origin: Vector3, target: Vector3, speed: number, gravity: number): (boolean, Vector3?, Vector3?)
+	local displacement = target - origin
+	local horizontal = Vector3.new(displacement.X, 0, displacement.Z)
+	local x = horizontal.Magnitude
+	local y = displacement.Y
+	local g = math.abs(gravity)
+	if speed < EPSILON or g < EPSILON then
+		return false, nil, nil
+	end
+	local speedSq = speed * speed
+	local discriminant = speedSq * speedSq - g * (g * x * x + 2 * y * speedSq)
+	if discriminant < 0 then
+		return false, nil, nil
+	end
+	local sqrtDisc = math.sqrt(discriminant)
+	local lowAngle = math.atan((speedSq - sqrtDisc) / (g * math.max(x, EPSILON)))
+	local highAngle = math.atan((speedSq + sqrtDisc) / (g * math.max(x, EPSILON)))
+	local dir = if x < EPSILON then Vector3.new(0, 0, -1) else horizontal / x
+	local lowVelocity = dir * (math.cos(lowAngle) * speed) + Vector3.yAxis * (math.sin(lowAngle) * speed)
+	local highVelocity = dir * (math.cos(highAngle) * speed) + Vector3.yAxis * (math.sin(highAngle) * speed)
+	return true, lowVelocity, highVelocity
+end
+
+function MathUtils.aabbFromPoints(points: { Vector3 }): (Vector3, Vector3)
+	if #points == 0 then
+		return Vector3.zero, Vector3.zero
+	end
+	local minPoint = points[1]
+	local maxPoint = points[1]
+	for i = 2, #points do
+		local p = points[i]
+		minPoint = Vector3.new(math.min(minPoint.X, p.X), math.min(minPoint.Y, p.Y), math.min(minPoint.Z, p.Z))
+		maxPoint = Vector3.new(math.max(maxPoint.X, p.X), math.max(maxPoint.Y, p.Y), math.max(maxPoint.Z, p.Z))
+	end
+	return minPoint, maxPoint
+end
+
+function MathUtils.mergeAABB(minA: Vector3, maxA: Vector3, minB: Vector3, maxB: Vector3): (Vector3, Vector3)
+	return Vector3.new(
+		math.min(minA.X, minB.X),
+		math.min(minA.Y, minB.Y),
+		math.min(minA.Z, minB.Z)
+	), Vector3.new(
+		math.max(maxA.X, maxB.X),
+		math.max(maxA.Y, maxB.Y),
+		math.max(maxA.Z, maxB.Z)
+	)
+end
+
+function MathUtils.transformAABB(minPoint: Vector3, maxPoint: Vector3, transform: CFrame): (Vector3, Vector3)
+	local corners = {
+		Vector3.new(minPoint.X, minPoint.Y, minPoint.Z),
+		Vector3.new(maxPoint.X, minPoint.Y, minPoint.Z),
+		Vector3.new(minPoint.X, maxPoint.Y, minPoint.Z),
+		Vector3.new(maxPoint.X, maxPoint.Y, minPoint.Z),
+		Vector3.new(minPoint.X, minPoint.Y, maxPoint.Z),
+		Vector3.new(maxPoint.X, minPoint.Y, maxPoint.Z),
+		Vector3.new(minPoint.X, maxPoint.Y, maxPoint.Z),
+		Vector3.new(maxPoint.X, maxPoint.Y, maxPoint.Z)
+	}
+	for i = 1, #corners do
+		corners[i] = transform:PointToWorldSpace(corners[i])
+	end
+	return MathUtils.aabbFromPoints(corners)
+end
+
+function MathUtils.boundingSphereFromAABB(minPoint: Vector3, maxPoint: Vector3): (Vector3, number)
+	local center = (minPoint + maxPoint) * 0.5
+	return center, (maxPoint - center).Magnitude
+end
+
+function MathUtils.aabbSurfaceArea(minPoint: Vector3, maxPoint: Vector3): number
+	local size = maxPoint - minPoint
+	return 2 * (size.X * size.Y + size.Y * size.Z + size.Z * size.X)
+end
+
+function MathUtils.aabbVolume(minPoint: Vector3, maxPoint: Vector3): number
+	local size = maxPoint - minPoint
+	return math.max(0, size.X) * math.max(0, size.Y) * math.max(0, size.Z)
+end
+
+function MathUtils.projectPointsOnAxis(points: { Vector3 }, axis: Vector3): (number, number)
+	local n = MathUtils.safeUnit(axis, Vector3.xAxis)
+	if #points == 0 then
+		return 0, 0
+	end
+	local minValue = points[1]:Dot(n)
+	local maxValue = minValue
+	for i = 2, #points do
+		local v = points[i]:Dot(n)
+		if v < minValue then minValue = v end
+		if v > maxValue then maxValue = v end
+	end
+	return minValue, maxValue
+end
+
+function MathUtils.intervalsOverlap(minA: number, maxA: number, minB: number, maxB: number): (boolean, number)
+	local depth = math.min(maxA, maxB) - math.max(minA, minB)
+	return depth >= 0, depth
+end
+
+function MathUtils.projectAABBOnAxis(minPoint: Vector3, maxPoint: Vector3, axis: Vector3): (number, number)
+	local center = (minPoint + maxPoint) * 0.5
+	local extents = (maxPoint - minPoint) * 0.5
+	local n = MathUtils.safeUnit(axis, Vector3.xAxis)
+	local projectionCenter = center:Dot(n)
+	local projectionRadius = math.abs(n.X) * extents.X + math.abs(n.Y) * extents.Y + math.abs(n.Z) * extents.Z
+	return projectionCenter - projectionRadius, projectionCenter + projectionRadius
+end
+
+function MathUtils.projectOBBOnAxis(boxCFrame: CFrame, halfExtents: Vector3, axis: Vector3): (number, number)
+	local n = MathUtils.safeUnit(axis, Vector3.xAxis)
+	local center = boxCFrame.Position:Dot(n)
+	local radius = math.abs(boxCFrame.RightVector:Dot(n)) * halfExtents.X + math.abs(boxCFrame.UpVector:Dot(n)) * halfExtents.Y + math.abs(boxCFrame.LookVector:Dot(n)) * halfExtents.Z
+	return center - radius, center + radius
+end
+
+function MathUtils.closestPointsOnSegmentsDetailed(a1: Vector3, a2: Vector3, b1: Vector3, b2: Vector3): (Vector3, Vector3, number, number)
+	local d1 = a2 - a1
+	local d2 = b2 - b1
+	local r = a1 - b1
+	local a = d1:Dot(d1)
+	local e = d2:Dot(d2)
+	local f = d2:Dot(r)
+	local s = 0
+	local t = 0
+	if a <= EPSILON and e <= EPSILON then
+		return a1, b1, 0, 0
+	end
+	if a <= EPSILON then
+		t = math.clamp(f / e, 0, 1)
+	else
+		local c = d1:Dot(r)
+		if e <= EPSILON then
+			s = math.clamp(-c / a, 0, 1)
+		else
+			local b = d1:Dot(d2)
+			local denom = a * e - b * b
+			if denom ~= 0 then
+				s = math.clamp((b * f - c * e) / denom, 0, 1)
+			else
+				s = 0
+			end
+			t = (b * s + f) / e
+			if t < 0 then
+				t = 0
+				s = math.clamp(-c / a, 0, 1)
+			elseif t > 1 then
+				t = 1
+				s = math.clamp((b - c) / a, 0, 1)
+			end
+		end
+	end
+	return a1 + d1 * s, b1 + d2 * t, s, t
+end
+
+function MathUtils.distanceSquaredSegments(a1: Vector3, a2: Vector3, b1: Vector3, b2: Vector3): number
+	local p1, p2 = MathUtils.closestPointsOnSegmentsDetailed(a1, a2, b1, b2)
+	local delta = p1 - p2
+	return delta:Dot(delta)
+end
+
+function MathUtils.triangleArea(a: Vector3, b: Vector3, c: Vector3): number
+	return (b - a):Cross(c - a).Magnitude * 0.5
+end
+
+function MathUtils.signedTetrahedronVolume(a: Vector3, b: Vector3, c: Vector3, d: Vector3): number
+	return (b - a):Dot((c - a):Cross(d - a)) / 6
+end
+
+function MathUtils.pointInSphere(point: Vector3, center: Vector3, radius: number): boolean
+	local delta = point - center
+	return delta:Dot(delta) <= radius * radius
+end
+
+function MathUtils.sphereSphereOverlap(centerA: Vector3, radiusA: number, centerB: Vector3, radiusB: number): (boolean, Vector3, number)
+	local delta = centerA - centerB
+	local distSq = delta:Dot(delta)
+	local radius = radiusA + radiusB
+	if distSq > radius * radius then
+		return false, Vector3.zero, 0
+	end
+	local dist = math.sqrt(distSq)
+	local normal = if dist > EPSILON then delta / dist else Vector3.yAxis
+	return true, normal, radius - dist
+end
+
+function MathUtils.capsulePointDistance(point: Vector3, a: Vector3, b: Vector3, radius: number): (number, Vector3)
+	local closest = MathUtils.closestPointOnSegment(point, a, b)
+	return math.max(0, (point - closest).Magnitude - radius), closest
+end
+
+function MathUtils.capsuleSphereOverlap(a: Vector3, b: Vector3, capsuleRadius: number, sphereCenter: Vector3, sphereRadius: number): (boolean, Vector3, number, Vector3)
+	local closest = MathUtils.closestPointOnSegment(sphereCenter, a, b)
+	local delta = sphereCenter - closest
+	local distSq = delta:Dot(delta)
+	local radius = capsuleRadius + sphereRadius
+	if distSq > radius * radius then
+		return false, Vector3.zero, 0, closest
+	end
+	local dist = math.sqrt(distSq)
+	local normal = if dist > EPSILON then delta / dist else Vector3.yAxis
+	return true, normal, radius - dist, closest
+end
+
+function MathUtils.square(x: number): number
+	return x * x
+end
+
+function MathUtils.cube(x: number): number
+	return x * x * x
+end
+
+function MathUtils.signNonZero(x: number): number
+	return if x < 0 then -1 else 1
+end
+
+function MathUtils.min3(a: number, b: number, c: number): number
+	return math.min(a, math.min(b, c))
+end
+
+function MathUtils.max3(a: number, b: number, c: number): number
+	return math.max(a, math.max(b, c))
+end
+
+function MathUtils.midpoint(a: number, b: number): number
+	return a + (b - a) * 0.5
+end
+
+function MathUtils.fract(x: number): number
+	return x - math.floor(x)
+end
+
+function MathUtils.step(edge: number, x: number): number
+	return if x < edge then 0 else 1
+end
+
+function MathUtils.safeAcos(x: number): number
+	return math.acos(math.clamp(x, -1, 1))
+end
+
+function MathUtils.safeAsin(x: number): number
+	return math.asin(math.clamp(x, -1, 1))
+end
+
+function MathUtils.sinc(x: number): number
+	if math.abs(x) < EPSILON then
+		local x2 = x * x
+		return 1 - x2 / 6 + x2 * x2 / 120
+	end
+	return math.sin(x) / x
+end
+
+function MathUtils.lerpPrecise(a: number, b: number, t: number): number
+	return (1 - t) * a + t * b
+end
+
+function MathUtils.bilerp(v00: number, v10: number, v01: number, v11: number, tx: number, ty: number): number
+	local a = MathUtils.lerp(v00, v10, tx)
+	local b = MathUtils.lerp(v01, v11, tx)
+	return MathUtils.lerp(a, b, ty)
+end
+
+function MathUtils.trilerp(c000: number, c100: number, c010: number, c110: number, c001: number, c101: number, c011: number, c111: number, tx: number, ty: number, tz: number): number
+	local x00 = MathUtils.lerp(c000, c100, tx)
+	local x10 = MathUtils.lerp(c010, c110, tx)
+	local x01 = MathUtils.lerp(c001, c101, tx)
+	local x11 = MathUtils.lerp(c011, c111, tx)
+	local y0 = MathUtils.lerp(x00, x10, ty)
+	local y1 = MathUtils.lerp(x01, x11, ty)
+	return MathUtils.lerp(y0, y1, tz)
+end
+
+function MathUtils.hashInt32(x: number): number
+	x = bit32.bxor(x, bit32.rshift(x, 16))
+	x = bit32.band(x * 0x7feb352d, 0xffffffff)
+	x = bit32.bxor(x, bit32.rshift(x, 15))
+	x = bit32.band(x * 0x846ca68b, 0xffffffff)
+	x = bit32.bxor(x, bit32.rshift(x, 16))
+	return bit32.band(x, 0xffffffff)
+end
+
+function MathUtils.hashCoords2(x: number, y: number): number
+	return MathUtils.hashInt32(bit32.bxor(bit32.band(x * 73856093, 0xffffffff), bit32.band(y * 19349663, 0xffffffff)))
+end
+
+function MathUtils.hashCoords3(x: number, y: number, z: number): number
+	local h = bit32.bxor(bit32.band(x * 73856093, 0xffffffff), bit32.band(y * 19349663, 0xffffffff))
+	h = bit32.bxor(h, bit32.band(z * 83492791, 0xffffffff))
+	return MathUtils.hashInt32(h)
+end
+
+function MathUtils.solveLinear(a: number, b: number): { number }?
+	if math.abs(a) < EPSILON then
+		return nil
+	end
+	return { -b / a }
+end
+
+function MathUtils.solveQuadraticStable(a: number, b: number, c: number): { number }?
+	if math.abs(a) < EPSILON then
+		return MathUtils.solveLinear(b, c)
+	end
+	local discriminant = b * b - 4 * a * c
+	if discriminant < -EPSILON then
+		return nil
+	end
+	if math.abs(discriminant) <= EPSILON then
+		return { -b / (2 * a) }
+	end
+	local sqrtDisc = math.sqrt(discriminant)
+	local q = -0.5 * (b + MathUtils.signNonZero(b) * sqrtDisc)
+	local r0 = q / a
+	local r1 = c / q
+	if r0 > r1 then
+		r0, r1 = r1, r0
+	end
+	return { r0, r1 }
+end
+
+function MathUtils.evaluatePolynomial(coefficients: { number }, x: number): number
+	local result = 0
+	for i = #coefficients, 1, -1 do
+		result = result * x + coefficients[i]
+	end
+	return result
+end
+
+function MathUtils.evaluatePolynomialDerivative(coefficients: { number }, x: number): number
+	local result = 0
+	for i = #coefficients, 2, -1 do
+		result = result * x + (i - 1) * coefficients[i]
+	end
+	return result
+end
+
+function MathUtils.newtonRaphson(initial: number, iterations: number, fn: (number) -> number, dfn: (number) -> number): number
+	local x = initial
+	for _ = 1, iterations do
+		local y = fn(x)
+		local dy = dfn(x)
+		if math.abs(dy) < EPSILON then
+			break
+		end
+		x -= y / dy
+	end
+	return x
+end
+
+function MathUtils.mat3Identity(): (number, number, number, number, number, number, number, number, number)
+	return 1, 0, 0, 0, 1, 0, 0, 0, 1
+end
+
+function MathUtils.mat3FromCFrame(cf: CFrame): (number, number, number, number, number, number, number, number, number)
+	local right = cf.RightVector
+	local up = cf.UpVector
+	local back = -cf.LookVector
+	return right.X, up.X, back.X, right.Y, up.Y, back.Y, right.Z, up.Z, back.Z
+end
+
+function MathUtils.mat3Determinant(m00: number, m01: number, m02: number, m10: number, m11: number, m12: number, m20: number, m21: number, m22: number): number
+	return m00 * (m11 * m22 - m12 * m21) - m01 * (m10 * m22 - m12 * m20) + m02 * (m10 * m21 - m11 * m20)
+end
+
+function MathUtils.mat3Transpose(m00: number, m01: number, m02: number, m10: number, m11: number, m12: number, m20: number, m21: number, m22: number): (number, number, number, number, number, number, number, number, number)
+	return m00, m10, m20, m01, m11, m21, m02, m12, m22
+end
+
+function MathUtils.mat3MulVec(m00: number, m01: number, m02: number, m10: number, m11: number, m12: number, m20: number, m21: number, m22: number, v: Vector3): Vector3
+	return Vector3.new(
+		m00 * v.X + m01 * v.Y + m02 * v.Z,
+		m10 * v.X + m11 * v.Y + m12 * v.Z,
+		m20 * v.X + m21 * v.Y + m22 * v.Z
+	)
+end
+
+function MathUtils.mat3Mul(a00: number, a01: number, a02: number, a10: number, a11: number, a12: number, a20: number, a21: number, a22: number, b00: number, b01: number, b02: number, b10: number, b11: number, b12: number, b20: number, b21: number, b22: number): (number, number, number, number, number, number, number, number, number)
+	return
+		a00 * b00 + a01 * b10 + a02 * b20,
+		a00 * b01 + a01 * b11 + a02 * b21,
+		a00 * b02 + a01 * b12 + a02 * b22,
+		a10 * b00 + a11 * b10 + a12 * b20,
+		a10 * b01 + a11 * b11 + a12 * b21,
+		a10 * b02 + a11 * b12 + a12 * b22,
+		a20 * b00 + a21 * b10 + a22 * b20,
+		a20 * b01 + a21 * b11 + a22 * b21,
+		a20 * b02 + a21 * b12 + a22 * b22
+end
+
+function MathUtils.mat3Inverse(m00: number, m01: number, m02: number, m10: number, m11: number, m12: number, m20: number, m21: number, m22: number): (boolean, number, number, number, number, number, number, number, number, number)
+	local c00 = m11 * m22 - m12 * m21
+	local c01 = -(m10 * m22 - m12 * m20)
+	local c02 = m10 * m21 - m11 * m20
+	local c10 = -(m01 * m22 - m02 * m21)
+	local c11 = m00 * m22 - m02 * m20
+	local c12 = -(m00 * m21 - m01 * m20)
+	local c20 = m01 * m12 - m02 * m11
+	local c21 = -(m00 * m12 - m02 * m10)
+	local c22 = m00 * m11 - m01 * m10
+	local det = m00 * c00 + m01 * c01 + m02 * c02
+	if math.abs(det) < EPSILON then
+		return false, 1, 0, 0, 0, 1, 0, 0, 0, 1
+	end
+	local invDet = 1 / det
+	return true,
+		c00 * invDet, c10 * invDet, c20 * invDet,
+		c01 * invDet, c11 * invDet, c21 * invDet,
+		c02 * invDet, c12 * invDet, c22 * invDet
+end
+
+function MathUtils.rayCapsuleIntersection(origin: Vector3, direction: Vector3, a: Vector3, b: Vector3, radius: number): (boolean, number?)
+	local ba = b - a
+	local oa = origin - a
+	local baba = ba:Dot(ba)
+	local bard = ba:Dot(direction)
+	local baoa = ba:Dot(oa)
+	local rdoa = direction:Dot(oa)
+	local oaoa = oa:Dot(oa)
+	local aCoef = baba - bard * bard
+	local bCoef = baba * rdoa - baoa * bard
+	local cCoef = baba * oaoa - baoa * baoa - radius * radius * baba
+	local best = math.huge
+	if math.abs(aCoef) > EPSILON then
+		local h = bCoef * bCoef - aCoef * cCoef
+		if h >= 0 then
+			local t = (-bCoef - math.sqrt(h)) / aCoef
+			local y = baoa + t * bard
+			if t >= 0 and y > 0 and y < baba then
+				best = t
+			end
+		end
+	end
+	local hitA, tA0 = MathUtils.raySphereIntersection(origin, direction, a, radius)
+	if hitA and tA0 and tA0 >= 0 and tA0 < best then
+		best = tA0
+	end
+	local hitB, tB0 = MathUtils.raySphereIntersection(origin, direction, b, radius)
+	if hitB and tB0 and tB0 >= 0 and tB0 < best then
+		best = tB0
+	end
+	if best == math.huge then
+		return false, nil
+	end
+	return true, best
+end
+
+function MathUtils.segmentSphereIntersection(p0: Vector3, p1: Vector3, center: Vector3, radius: number): (boolean, number?)
+	local delta = p1 - p0
+	local hit, t0, t1 = MathUtils.raySphereIntersection(p0, delta, center, radius)
+	if not hit then
+		return false, nil
+	end
+	local best: number? = nil
+	if t0 and t0 >= 0 and t0 <= 1 then best = t0 end
+	if t1 and t1 >= 0 and t1 <= 1 and (not best or t1 < best) then best = t1 end
+	return best ~= nil, best
+end
+
+function MathUtils.segmentCapsuleIntersection(p0: Vector3, p1: Vector3, a: Vector3, b: Vector3, radius: number): (boolean, number?)
+	local delta = p1 - p0
+	local hit, t = MathUtils.rayCapsuleIntersection(p0, delta, a, b, radius)
+	if hit and t and t >= 0 and t <= 1 then
+		return true, t
+	end
+	return false, nil
+end
+
+function MathUtils.closestPointOnRay(point: Vector3, origin: Vector3, direction: Vector3): (Vector3, number)
+	local denom = direction:Dot(direction)
+	if denom < EPSILON then
+		return origin, 0
+	end
+	local t = math.max(0, (point - origin):Dot(direction) / denom)
+	return origin + direction * t, t
+end
+
+function MathUtils.closestPointsRaySegment(rayOrigin: Vector3, rayDirection: Vector3, segA: Vector3, segB: Vector3): (Vector3, Vector3, number, number)
+	local segDir = segB - segA
+	local p1, p2, s, t = MathUtils.closestPointsOnSegmentsDetailed(rayOrigin, rayOrigin + rayDirection, segA, segB)
+	if s <= 0 then
+		p1 = rayOrigin
+		p2 = MathUtils.closestPointOnSegment(rayOrigin, segA, segB)
+		s = 0
+		t = if segDir:Dot(segDir) < EPSILON then 0 else math.clamp((p2 - segA):Dot(segDir) / segDir:Dot(segDir), 0, 1)
+	end
+	return p1, p2, s, t
+end
+
+function MathUtils.isPowerOfTwo(value: number): boolean
+	local n = math.floor(value)
+	return n > 0 and bit32.band(n, n - 1) == 0
+end
+
+function MathUtils.nextPowerOfTwo(value: number): number
+	local n = math.max(1, math.floor(value))
+	local p = 1
+	while p < n do
+		p *= 2
+	end
+	return p
+end
+
+function MathUtils.previousPowerOfTwo(value: number): number
+	local n = math.max(1, math.floor(value))
+	local p = 1
+	while p * 2 <= n do
+		p *= 2
+	end
+	return p
+end
+
+function MathUtils.alignUp(value: number, alignment: number): number
+	if alignment <= 0 then
+		return value
+	end
+	return math.floor((value + alignment - 1) / alignment) * alignment
+end
+
+function MathUtils.alignDown(value: number, alignment: number): number
+	if alignment <= 0 then
+		return value
+	end
+	return math.floor(value / alignment) * alignment
+end
+
+function MathUtils.quantizeUnorm(value: number, minValue: number, maxValue: number, bits: number): number
+	local levels = 2 ^ bits - 1
+	local t = MathUtils.saturate(MathUtils.inverseLerp(minValue, maxValue, value))
+	return math.floor(t * levels + 0.5)
+end
+
+function MathUtils.dequantizeUnorm(value: number, minValue: number, maxValue: number, bits: number): number
+	local levels = 2 ^ bits - 1
+	return MathUtils.lerp(minValue, maxValue, math.clamp(value, 0, levels) / levels)
+end
+
+function MathUtils.quantizeSnorm(value: number, bits: number): number
+	local maxValue = 2 ^ (bits - 1) - 1
+	return math.floor(math.clamp(value, -1, 1) * maxValue + (if value >= 0 then 0.5 else -0.5))
+end
+
+function MathUtils.dequantizeSnorm(value: number, bits: number): number
+	local maxValue = 2 ^ (bits - 1) - 1
+	return math.clamp(value / maxValue, -1, 1)
+end
+
+function MathUtils.hashToUnit01(hash: number): number
+	return bit32.band(hash, 0xffffffff) / 0xffffffff
+end
+
+function MathUtils.valueNoise1(x: number): number
+	local ix = math.floor(x)
+	local fx = MathUtils.fract(x)
+	local u = fx * fx * (3 - 2 * fx)
+	local a = MathUtils.hashToUnit01(MathUtils.hashInt32(ix))
+	local b = MathUtils.hashToUnit01(MathUtils.hashInt32(ix + 1))
+	return MathUtils.lerp(a, b, u)
+end
+
+function MathUtils.valueNoise2(x: number, y: number): number
+	local ix = math.floor(x)
+	local iy = math.floor(y)
+	local fx = MathUtils.fract(x)
+	local fy = MathUtils.fract(y)
+	local ux = fx * fx * (3 - 2 * fx)
+	local uy = fy * fy * (3 - 2 * fy)
+	local v00 = MathUtils.hashToUnit01(MathUtils.hashCoords2(ix, iy))
+	local v10 = MathUtils.hashToUnit01(MathUtils.hashCoords2(ix + 1, iy))
+	local v01 = MathUtils.hashToUnit01(MathUtils.hashCoords2(ix, iy + 1))
+	local v11 = MathUtils.hashToUnit01(MathUtils.hashCoords2(ix + 1, iy + 1))
+	return MathUtils.bilerp(v00, v10, v01, v11, ux, uy)
+end
+
+function MathUtils.valueNoise3(x: number, y: number, z: number): number
+	local ix = math.floor(x)
+	local iy = math.floor(y)
+	local iz = math.floor(z)
+	local fx = MathUtils.fract(x)
+	local fy = MathUtils.fract(y)
+	local fz = MathUtils.fract(z)
+	local ux = fx * fx * (3 - 2 * fx)
+	local uy = fy * fy * (3 - 2 * fy)
+	local uz = fz * fz * (3 - 2 * fz)
+	return MathUtils.trilerp(
+		MathUtils.hashToUnit01(MathUtils.hashCoords3(ix, iy, iz)),
+		MathUtils.hashToUnit01(MathUtils.hashCoords3(ix + 1, iy, iz)),
+		MathUtils.hashToUnit01(MathUtils.hashCoords3(ix, iy + 1, iz)),
+		MathUtils.hashToUnit01(MathUtils.hashCoords3(ix + 1, iy + 1, iz)),
+		MathUtils.hashToUnit01(MathUtils.hashCoords3(ix, iy, iz + 1)),
+		MathUtils.hashToUnit01(MathUtils.hashCoords3(ix + 1, iy, iz + 1)),
+		MathUtils.hashToUnit01(MathUtils.hashCoords3(ix, iy + 1, iz + 1)),
+		MathUtils.hashToUnit01(MathUtils.hashCoords3(ix + 1, iy + 1, iz + 1)),
+		ux, uy, uz
+	)
+end
+
+function MathUtils.fbm2(x: number, y: number, octaves: number, lacunarity: number?, gain: number?): number
+	local frequency = 1
+	local amplitude = 0.5
+	local sum = 0
+	local norm = 0
+	local lac = lacunarity or 2
+	local g = gain or 0.5
+	for _ = 1, math.max(1, octaves) do
+		sum += MathUtils.valueNoise2(x * frequency, y * frequency) * amplitude
+		norm += amplitude
+		frequency *= lac
+		amplitude *= g
+	end
+	return if norm > EPSILON then sum / norm else 0
+end
+
+function MathUtils.fbm3(x: number, y: number, z: number, octaves: number, lacunarity: number?, gain: number?): number
+	local frequency = 1
+	local amplitude = 0.5
+	local sum = 0
+	local norm = 0
+	local lac = lacunarity or 2
+	local g = gain or 0.5
+	for _ = 1, math.max(1, octaves) do
+		sum += MathUtils.valueNoise3(x * frequency, y * frequency, z * frequency) * amplitude
+		norm += amplitude
+		frequency *= lac
+		amplitude *= g
+	end
+	return if norm > EPSILON then sum / norm else 0
+end
+
+function MathUtils.orthonormalBasisFromNormal(normal: Vector3): (Vector3, Vector3)
+	local n = MathUtils.safeUnit(normal, Vector3.yAxis)
+	local sign = MathUtils.signNonZero(n.Z)
+	local a = -1 / (sign + n.Z)
+	local b = n.X * n.Y * a
+	local tangent = Vector3.new(1 + sign * n.X * n.X * a, sign * b, -sign * n.X)
+	local bitangent = Vector3.new(b, sign + n.Y * n.Y * a, -n.Y)
+	return MathUtils.safeUnit(tangent, Vector3.xAxis), MathUtils.safeUnit(bitangent, Vector3.zAxis)
+end
+
+function MathUtils.tangentFrame(normal: Vector3, tangentHint: Vector3?): (Vector3, Vector3, Vector3)
+	local n = MathUtils.safeUnit(normal, Vector3.yAxis)
+	local tangent = tangentHint or Vector3.xAxis
+	tangent = tangent - n * tangent:Dot(n)
+	if tangent.Magnitude < EPSILON then
+		local t, b = MathUtils.orthonormalBasisFromNormal(n)
+		return t, b, n
+	end
+	tangent = tangent.Unit
+	local bitangent = n:Cross(tangent).Unit
+	return tangent, bitangent, n
+end
+
+function MathUtils.signedDistanceSphere(point: Vector3, center: Vector3, radius: number): number
+	return (point - center).Magnitude - radius
+end
+
+function MathUtils.signedDistancePlane(point: Vector3, planePoint: Vector3, planeNormal: Vector3): number
+	local n = MathUtils.safeUnit(planeNormal, Vector3.yAxis)
+	return (point - planePoint):Dot(n)
+end
+
+function MathUtils.signedDistanceAABB(point: Vector3, minPoint: Vector3, maxPoint: Vector3): number
+	local center = (minPoint + maxPoint) * 0.5
+	local half = (maxPoint - minPoint) * 0.5
+	local q = MathUtils.vector3Abs(point - center) - half
+	local outside = Vector3.new(math.max(q.X, 0), math.max(q.Y, 0), math.max(q.Z, 0)).Magnitude
+	local inside = math.min(math.max(q.X, math.max(q.Y, q.Z)), 0)
+	return outside + inside
+end
+
+function MathUtils.signedDistanceOBB(point: Vector3, boxCFrame: CFrame, halfExtents: Vector3): number
+	return MathUtils.signedDistanceAABB(boxCFrame:PointToObjectSpace(point), -halfExtents, halfExtents)
+end
+
+function MathUtils.signedDistanceCapsule(point: Vector3, a: Vector3, b: Vector3, radius: number): number
+	local closest = MathUtils.closestPointOnSegment(point, a, b)
+	return (point - closest).Magnitude - radius
+end
+
+function MathUtils.signedDistanceCylinder(point: Vector3, a: Vector3, b: Vector3, radius: number): number
+	local axis = b - a
+	local height = axis.Magnitude
+	if height < EPSILON then
+		return MathUtils.signedDistanceSphere(point, a, radius)
+	end
+	local n = axis / height
+	local pa = point - a
+	local axial = pa:Dot(n)
+	local radial = (pa - n * axial).Magnitude - radius
+	local capped = math.abs(axial - height * 0.5) - height * 0.5
+	local outside = Vector2.new(math.max(radial, 0), math.max(capped, 0)).Magnitude
+	local inside = math.min(math.max(radial, capped), 0)
+	return outside + inside
+end
+
+function MathUtils.pointInCapsule(point: Vector3, a: Vector3, b: Vector3, radius: number): boolean
+	return MathUtils.distanceSquaredPointSegment(point, a, b) <= radius * radius
+end
+
+function MathUtils.normalFromSDF(point: Vector3, sdf: (Vector3) -> number, epsilon: number?): Vector3
+	local e = epsilon or 0.001
+	local x = sdf(point + Vector3.new(e, 0, 0)) - sdf(point - Vector3.new(e, 0, 0))
+	local y = sdf(point + Vector3.new(0, e, 0)) - sdf(point - Vector3.new(0, e, 0))
+	local z = sdf(point + Vector3.new(0, 0, e)) - sdf(point - Vector3.new(0, 0, e))
+	return MathUtils.safeUnit(Vector3.new(x, y, z), Vector3.yAxis)
+end
+
+function MathUtils.normalizePlane(normal: Vector3, d: number): (Vector3, number)
+	local mag = normal.Magnitude
+	if mag < EPSILON then
+		return Vector3.yAxis, d
+	end
+	return normal / mag, d / mag
+end
+
+function MathUtils.sphereInPlane(center: Vector3, radius: number, planeNormal: Vector3, planeD: number): number
+	local dist = planeNormal:Dot(center) + planeD
+	if dist > radius then return 1 end
+	if dist < -radius then return -1 end
+	return 0
+end
+
+function MathUtils.pointInFrustum(point: Vector3, planes: { Plane }): boolean
+	for _, plane in ipairs(planes) do
+		if plane.normal:Dot(point) + plane.d < 0 then
+			return false
+		end
+	end
+	return true
+end
+
+function MathUtils.sphereInFrustum(center: Vector3, radius: number, planes: { Plane }): boolean
+	for _, plane in ipairs(planes) do
+		if plane.normal:Dot(center) + plane.d < -radius then
+			return false
+		end
+	end
+	return true
+end
+
+function MathUtils.inertiaTensorSolidSphere(mass: number, radius: number): Vector3
+	local i = 0.4 * mass * radius * radius
+	return Vector3.new(i, i, i)
+end
+
+function MathUtils.inertiaTensorBox(mass: number, size: Vector3): Vector3
+	local x2 = size.X * size.X
+	local y2 = size.Y * size.Y
+	local z2 = size.Z * size.Z
+	return Vector3.new(
+		mass * (y2 + z2) / 12,
+		mass * (x2 + z2) / 12,
+		mass * (x2 + y2) / 12
+	)
+end
+
+function MathUtils.inertiaTensorSolidCylinder(mass: number, radius: number, height: number): Vector3
+	local ixz = mass * (3 * radius * radius + height * height) / 12
+	local iy = 0.5 * mass * radius * radius
+	return Vector3.new(ixz, iy, ixz)
+end
+
+function MathUtils.orientation2D(a: Vector2, b: Vector2, c: Vector2): number
+	return (b.X - a.X) * (c.Y - a.Y) - (b.Y - a.Y) * (c.X - a.X)
+end
+
+function MathUtils.pointInTriangle2D(point: Vector2, a: Vector2, b: Vector2, c: Vector2): boolean
+	local o1 = MathUtils.orientation2D(a, b, point)
+	local o2 = MathUtils.orientation2D(b, c, point)
+	local o3 = MathUtils.orientation2D(c, a, point)
+	local hasNeg = o1 < 0 or o2 < 0 or o3 < 0
+	local hasPos = o1 > 0 or o2 > 0 or o3 > 0
+	return not (hasNeg and hasPos)
+end
+
+function MathUtils.segmentSegmentIntersection2D(a0: Vector2, a1: Vector2, b0: Vector2, b1: Vector2): (boolean, number?, number?, Vector2?)
+	local r = a1 - a0
+	local s = b1 - b0
+	local denom = r.X * s.Y - r.Y * s.X
+	if math.abs(denom) < EPSILON then
+		return false, nil, nil, nil
+	end
+	local qmp = b0 - a0
+	local t = (qmp.X * s.Y - qmp.Y * s.X) / denom
+	local u = (qmp.X * r.Y - qmp.Y * r.X) / denom
+	if t < 0 or t > 1 or u < 0 or u > 1 then
+		return false, t, u, nil
+	end
+	return true, t, u, a0 + r * t
+end
+
+function MathUtils.planeFromPointNormal(point: Vector3, normal: Vector3): Plane
+	local n = MathUtils.safeUnit(normal, Vector3.yAxis)
+	return { normal = n, d = -n:Dot(point) }
+end
+
+function MathUtils.planeFromTriangle(a: Vector3, b: Vector3, c: Vector3): Plane
+	local n = MathUtils.safeUnit((b - a):Cross(c - a), Vector3.yAxis)
+	return { normal = n, d = -n:Dot(a) }
+end
+
+function MathUtils.distancePointPlane(point: Vector3, planeNormal: Vector3, planeD: number): number
+	return planeNormal:Dot(point) + planeD
+end
+
+function MathUtils.projectPointOnPlane(point: Vector3, planeNormal: Vector3, planeD: number): Vector3
+	local n = MathUtils.safeUnit(planeNormal, Vector3.yAxis)
+	return point - n * (n:Dot(point) + planeD)
+end
+
+function MathUtils.rayPlaneIntersection(origin: Vector3, direction: Vector3, planeNormal: Vector3, planeD: number): (boolean, number?, Vector3?)
+	local denom = planeNormal:Dot(direction)
+	if math.abs(denom) < EPSILON then
+		return false, nil, nil
+	end
+	local t = -(planeNormal:Dot(origin) + planeD) / denom
+	if t < 0 then
+		return false, t, nil
+	end
+	return true, t, origin + direction * t
+end
+
+function MathUtils.reflectVector(direction: Vector3, normal: Vector3): Vector3
+	local n = MathUtils.safeUnit(normal, Vector3.yAxis)
+	return direction - n * (2 * direction:Dot(n))
+end
+
+function MathUtils.refractVector(direction: Vector3, normal: Vector3, eta: number): (boolean, Vector3)
+	local d = MathUtils.safeUnit(direction, Vector3.zAxis)
+	local n = MathUtils.safeUnit(normal, Vector3.yAxis)
+	local cosi = math.clamp(-d:Dot(n), -1, 1)
+	local sint2 = eta * eta * (1 - cosi * cosi)
+	if sint2 > 1 then
+		return false, Vector3.zero
+	end
+	local cost = math.sqrt(1 - sint2)
+	return true, d * eta + n * (eta * cosi - cost)
+end
+
+function MathUtils.frustumFromCamera(cameraCFrame: CFrame, verticalFovRadians: number, aspect: number, nearDistance: number, farDistance: number): { Plane }
+	local position = cameraCFrame.Position
+	local right = cameraCFrame.RightVector
+	local up = cameraCFrame.UpVector
+	local forward = cameraCFrame.LookVector
+	local near = math.max(EPSILON, nearDistance)
+	local far = math.max(near + EPSILON, farDistance)
+	local tanY = math.tan(verticalFovRadians * 0.5)
+	local nearHalfHeight = near * tanY
+	local nearHalfWidth = nearHalfHeight * aspect
+	local nearCenter = position + forward * near
+	local ntl = nearCenter + up * nearHalfHeight - right * nearHalfWidth
+	local ntr = nearCenter + up * nearHalfHeight + right * nearHalfWidth
+	local nbl = nearCenter - up * nearHalfHeight - right * nearHalfWidth
+	local nbr = nearCenter - up * nearHalfHeight + right * nearHalfWidth
+	return {
+		MathUtils.planeFromPointNormal(nearCenter, forward),
+		MathUtils.planeFromPointNormal(position + forward * far, -forward),
+		MathUtils.planeFromTriangle(position, nbl, ntl),
+		MathUtils.planeFromTriangle(position, ntr, nbr),
+		MathUtils.planeFromTriangle(position, ntl, ntr),
+		MathUtils.planeFromTriangle(position, nbr, nbl),
+	}
+end
+
+function MathUtils.aabbInFrustum(minPoint: Vector3, maxPoint: Vector3, planes: { Plane }): boolean
+	for _, plane in ipairs(planes) do
+		local n = plane.normal
+		local p = Vector3.new(if n.X >= 0 then maxPoint.X else minPoint.X, if n.Y >= 0 then maxPoint.Y else minPoint.Y, if n.Z >= 0 then maxPoint.Z else minPoint.Z)
+		if n:Dot(p) + plane.d < 0 then
+			return false
+		end
+	end
+	return true
+end
+
+function MathUtils.obbInFrustum(boxCFrame: CFrame, halfExtents: Vector3, planes: { Plane }): boolean
+	local center = boxCFrame.Position
+	local right = boxCFrame.RightVector
+	local up = boxCFrame.UpVector
+	local look = boxCFrame.LookVector
+	for _, plane in ipairs(planes) do
+		local n = plane.normal
+		local radius = math.abs(n:Dot(right)) * halfExtents.X + math.abs(n:Dot(up)) * halfExtents.Y + math.abs(n:Dot(look)) * halfExtents.Z
+		if n:Dot(center) + plane.d + radius < 0 then
+			return false
+		end
+	end
+	return true
+end
+
+function MathUtils.supportSphere(center: Vector3, radius: number, direction: Vector3): Vector3
+	return center + MathUtils.safeUnit(direction, Vector3.xAxis) * radius
+end
+
+function MathUtils.supportAABB(minPoint: Vector3, maxPoint: Vector3, direction: Vector3): Vector3
+	return Vector3.new(if direction.X >= 0 then maxPoint.X else minPoint.X, if direction.Y >= 0 then maxPoint.Y else minPoint.Y, if direction.Z >= 0 then maxPoint.Z else minPoint.Z)
+end
+
+function MathUtils.supportOBB(boxCFrame: CFrame, halfExtents: Vector3, direction: Vector3): Vector3
+	local localDirection = boxCFrame:VectorToObjectSpace(direction)
+	local localPoint = Vector3.new(if localDirection.X >= 0 then halfExtents.X else -halfExtents.X, if localDirection.Y >= 0 then halfExtents.Y else -halfExtents.Y, if localDirection.Z >= 0 then halfExtents.Z else -halfExtents.Z)
+	return boxCFrame:PointToWorldSpace(localPoint)
+end
+
+function MathUtils.supportCapsule(a: Vector3, b: Vector3, radius: number, direction: Vector3): Vector3
+	local n = MathUtils.safeUnit(direction, Vector3.xAxis)
+	local endpoint = if a:Dot(n) > b:Dot(n) then a else b
+	return endpoint + n * radius
+end
+
+function MathUtils.obbOBBOverlap(cfA: CFrame, halfA: Vector3, cfB: CFrame, halfB: Vector3): boolean
+	local axesA = { cfA.RightVector, cfA.UpVector, cfA.LookVector }
+	local axesB = { cfB.RightVector, cfB.UpVector, cfB.LookVector }
+	local a = { halfA.X, halfA.Y, halfA.Z }
+	local b = { halfB.X, halfB.Y, halfB.Z }
+	local r = {}
+	local ar = {}
+	for i = 1, 3 do
+		r[i] = {}
+		ar[i] = {}
+		for j = 1, 3 do
+			r[i][j] = axesA[i]:Dot(axesB[j])
+			ar[i][j] = math.abs(r[i][j]) + EPSILON
+		end
+	end
+	local centerDelta = cfB.Position - cfA.Position
+	local t = { centerDelta:Dot(axesA[1]), centerDelta:Dot(axesA[2]), centerDelta:Dot(axesA[3]) }
+	for i = 1, 3 do
+		local rb = b[1] * ar[i][1] + b[2] * ar[i][2] + b[3] * ar[i][3]
+		if math.abs(t[i]) > a[i] + rb then
+			return false
+		end
+	end
+	for j = 1, 3 do
+		local ra = a[1] * ar[1][j] + a[2] * ar[2][j] + a[3] * ar[3][j]
+		local tb = math.abs(centerDelta:Dot(axesB[j]))
+		if tb > ra + b[j] then
+			return false
+		end
+	end
+	for i = 1, 3 do
+		local i1 = i % 3 + 1
+		local i2 = i1 % 3 + 1
+		for j = 1, 3 do
+			local j1 = j % 3 + 1
+			local j2 = j1 % 3 + 1
+			local ra = a[i1] * ar[i2][j] + a[i2] * ar[i1][j]
+			local rb = b[j1] * ar[i][j2] + b[j2] * ar[i][j1]
+			local dist = math.abs(t[i2] * r[i1][j] - t[i1] * r[i2][j])
+			if dist > ra + rb then
+				return false
+			end
+		end
+	end
+	return true
+end
+
+function MathUtils.sdfUnion(a: number, b: number): number
+	return math.min(a, b)
+end
+
+function MathUtils.sdfIntersection(a: number, b: number): number
+	return math.max(a, b)
+end
+
+function MathUtils.sdfSubtraction(a: number, b: number): number
+	return math.max(a, -b)
+end
+
+function MathUtils.sdfSmoothUnion(a: number, b: number, k: number): number
+	local h = MathUtils.saturate(0.5 + 0.5 * (b - a) / math.max(k, EPSILON))
+	return MathUtils.lerp(b, a, h) - k * h * (1 - h)
+end
+
+function MathUtils.sdfSmoothIntersection(a: number, b: number, k: number): number
+	return -MathUtils.sdfSmoothUnion(-a, -b, k)
+end
+
+function MathUtils.sdfSmoothSubtraction(a: number, b: number, k: number): number
+	return MathUtils.sdfSmoothIntersection(a, -b, k)
+end
+
+function MathUtils.sphereTrace(origin: Vector3, direction: Vector3, maxDistance: number, maxSteps: number, hitEpsilon: number, sdf: (Vector3) -> number): (boolean, number, Vector3, number)
+	local dir = MathUtils.safeUnit(direction, Vector3.zAxis)
+	local distance = 0
+	local steps = math.max(1, maxSteps)
+	for i = 1, steps do
+		local point = origin + dir * distance
+		local d = sdf(point)
+		if math.abs(d) <= hitEpsilon then
+			return true, distance, point, i
+		end
+		distance += math.max(d, hitEpsilon)
+		if distance > maxDistance then
+			return false, distance, origin + dir * distance, i
+		end
+	end
+	return false, distance, origin + dir * distance, steps
+end
+
+function MathUtils.triangleNormal(a: Vector3, b: Vector3, c: Vector3): Vector3
+	return MathUtils.safeUnit((b - a):Cross(c - a), Vector3.yAxis)
+end
+
+function MathUtils.triangleTangentBasis(p0: Vector3, p1: Vector3, p2: Vector3, uv0: Vector2, uv1: Vector2, uv2: Vector2): (Vector3, Vector3, Vector3)
+	local e1 = p1 - p0
+	local e2 = p2 - p0
+	local duv1 = uv1 - uv0
+	local duv2 = uv2 - uv0
+	local denom = duv1.X * duv2.Y - duv2.X * duv1.Y
+	local normal = MathUtils.triangleNormal(p0, p1, p2)
+	if math.abs(denom) < EPSILON then
+		local tangent, bitangent = MathUtils.orthonormalBasisFromNormal(normal)
+		return tangent, bitangent, normal
+	end
+	local f = 1 / denom
+	local tangent = MathUtils.safeUnit((e1 * duv2.Y - e2 * duv1.Y) * f, Vector3.xAxis)
+	local bitangent = MathUtils.safeUnit((e2 * duv1.X - e1 * duv2.X) * f, Vector3.zAxis)
+	return tangent, bitangent, normal
+end
+
+function MathUtils.polygonArea2D(points: { Vector2 }): number
+	local count = #points
+	if count < 3 then
+		return 0
+	end
+	local area = 0
+	for i = 1, count do
+		local a0 = points[i]
+		local b0 = points[i % count + 1]
+		area += a0.X * b0.Y - b0.X * a0.Y
+	end
+	return area * 0.5
+end
+
+function MathUtils.pointInPolygon2D(point: Vector2, points: { Vector2 }): boolean
+	local inside = false
+	local count = #points
+	local j = count
+	for i = 1, count do
+		local a0 = points[i]
+		local b0 = points[j]
+		local denom = b0.Y - a0.Y
+		if ((a0.Y > point.Y) ~= (b0.Y > point.Y)) and math.abs(denom) > EPSILON and point.X < (b0.X - a0.X) * (point.Y - a0.Y) / denom + a0.X then
+			inside = not inside
+		end
+		j = i
+	end
+	return inside
+end
+
+local function part1By2(n: number): number
+	n = bit32.band(n, 0x000003ff)
+	n = bit32.band(bit32.bor(n, bit32.lshift(n, 16)), 0x030000ff)
+	n = bit32.band(bit32.bor(n, bit32.lshift(n, 8)), 0x0300f00f)
+	n = bit32.band(bit32.bor(n, bit32.lshift(n, 4)), 0x030c30c3)
+	n = bit32.band(bit32.bor(n, bit32.lshift(n, 2)), 0x09249249)
+	return n
+end
+
+function MathUtils.morton3D(x: number, y: number, z: number): number
+	return bit32.bor(part1By2(x), bit32.lshift(part1By2(y), 1), bit32.lshift(part1By2(z), 2))
+end
+
+function MathUtils.runSelfTests(): boolean
+	local function approx(a: number, b: number, tolerance: number?): boolean
+		return math.abs(a - b) <= (tolerance or 1e-6)
+	end
+	local function approxVector3(a: Vector3, b: Vector3, tolerance: number?): boolean
+		local t = tolerance or 1e-6
+		return approx(a.X, b.X, t) and approx(a.Y, b.Y, t) and approx(a.Z, b.Z, t)
+	end
+
+	local rayHit, rayT0, rayT1 = MathUtils.collisionRayAABBInterval(Vector3.new(-2, 0.5, 0.5), Vector3.xAxis, Vector3.zero, Vector3.one)
+	assert(rayHit == true, "collisionRayAABBInterval should hit unit AABB")
+	assert(approx(rayT0, 2) and approx(rayT1, 3), "collisionRayAABBInterval hit interval mismatch")
+	local rayMiss, missT0, missT1 = MathUtils.collisionRayAABBInterval(Vector3.new(-2, 2, 0.5), Vector3.xAxis, Vector3.zero, Vector3.one)
+	assert(rayMiss == false and missT0 == 0 and missT1 == 0, "collisionRayAABBInterval miss should return false, 0, 0")
+
+	local closest, segmentT = MathUtils.closestPointOnSegment(Vector3.new(2, 3, 0), Vector3.zero, Vector3.new(10, 0, 0))
+	assert(approxVector3(closest, Vector3.new(2, 0, 0)) and approx(segmentT, 0.2), "closestPointOnSegment mismatch")
+	assert(approx(MathUtils.distanceSquaredPointSegment(Vector3.new(2, 3, 0), Vector3.zero, Vector3.new(10, 0, 0)), 9), "distanceSquaredPointSegment mismatch")
+
+	local springPosition, springVelocity = MathUtils.springDamp(0, 10, 0, 25, 10, 1)
+	local springExp = math.exp(-5)
+	assert(approx(springPosition, 10 - 60 * springExp, 1e-5), "springDamp critical position mismatch")
+	assert(approx(springVelocity, 250 * springExp, 1e-5), "springDamp critical velocity mismatch")
+	local underPosition, underVelocity = MathUtils.springDamp(0, 10, 0, 25, 2, 0.25)
+	assert(underPosition == underPosition and underVelocity == underVelocity, "springDamp underdamped should not return NaN")
+	local overPosition, overVelocity = MathUtils.springDamp(0, 10, 0, 25, 20, 0.5)
+	assert(approx(overPosition, 4.486474591628, 1e-6), "springDamp overdamped position mismatch")
+	assert(approx(overVelocity, 7.385534901491, 1e-6), "springDamp overdamped velocity mismatch")
+
+	local sx, sy, sz, sw = MathUtils.quaternionSlerp(0, 0, 0, 1, 0, 1, 0, 0, 0.5)
+	local sqrtHalf = math.sqrt(0.5)
+	assert(approx(sx, 0) and approx(sy, sqrtHalf) and approx(sz, 0) and approx(sw, sqrtHalf), "quaternionSlerp midpoint mismatch")
+	local mx, my, mz, mw = MathUtils.matrixToQuaternion(CFrame.Angles(0, math.pi / 2, 0))
+	assert(approx(mx, 0) and approx(my, sqrtHalf, 1e-6) and approx(mz, 0) and approx(mw, sqrtHalf, 1e-6), "matrixToQuaternion Y rotation mismatch")
+	local cubicRoots = MathUtils.solveCubic(1, -6, 11, -6)
+	assert(cubicRoots ~= nil and #cubicRoots == 3, "solveCubic root count mismatch")
+	table.sort(cubicRoots :: { number })
+	assert(approx((cubicRoots :: { number })[1], 1) and approx((cubicRoots :: { number })[2], 2) and approx((cubicRoots :: { number })[3], 3), "solveCubic roots mismatch")
+	local sphereObbHit, sphereObbNormal, sphereObbDepth, sphereObbPoint = MathUtils.collisionSphereOBB(Vector3.new(1.5, 0, 0), 1, CFrame.new(), Vector3.one)
+	assert(sphereObbHit == true and approxVector3(sphereObbNormal, Vector3.xAxis) and approx(sphereObbDepth, 0.5) and approxVector3(sphereObbPoint, Vector3.new(1, 0, 0)), "collisionSphereOBB hit mismatch")
+	local sphereObbMiss = MathUtils.collisionSphereOBB(Vector3.new(3, 0, 0), 0.5, CFrame.new(), Vector3.one)
+	assert(sphereObbMiss == false, "collisionSphereOBB miss mismatch")
+
+	assert(MathUtils.vector3Abs(Vector3.new(-1, 2, -3)) == Vector3.new(1, 2, 3), "vector3Abs mismatch")
+	assert(MathUtils.vector3Min(Vector3.new(1, 5, -2), Vector3.new(3, 4, -5)) == Vector3.new(1, 4, -5), "vector3Min mismatch")
+	assert(MathUtils.vector3Max(Vector3.new(1, 5, -2), Vector3.new(3, 4, -5)) == Vector3.new(3, 5, -2), "vector3Max mismatch")
+	assert(MathUtils.vector3Hadamard(Vector3.new(2, 3, 4), Vector3.new(5, 6, 7)) == Vector3.new(10, 18, 28), "vector3Hadamard mismatch")
+	assert(MathUtils.vector3Reciprocal(Vector3.new(2, 0, -4), 99) == Vector3.new(0.5, 99, -0.25), "vector3Reciprocal mismatch")
+	assert(MathUtils.vector3Clamp(Vector3.new(-2, 0.5, 4), Vector3.zero, Vector3.one) == Vector3.new(0, 0.5, 1), "vector3Clamp mismatch")
+
+	local plane = MathUtils.planeFromPointNormal(Vector3.zero, Vector3.yAxis)
+	assert(plane.normal == Vector3.yAxis and plane.d == 0, "planeFromPointNormal mismatch")
+	assert(MathUtils.pointInFrustum(Vector3.new(0, 1, 0), { plane }) == true, "pointInFrustum should accept point above plane")
+	assert(MathUtils.pointInFrustum(Vector3.new(0, -1, 0), { plane }) == false, "pointInFrustum should reject point below plane")
+	assert(MathUtils.sphereInFrustum(Vector3.new(0, -0.5, 0), 0.6, { plane }) == true, "sphereInFrustum radius mismatch")
+
+	local contacts: { Contact } = { { depth = 0.1 }, { depth = 0.5 }, {}, { depth = 0.25 } }
+	MathUtils.collisionSortContactsByDepth(contacts)
+	assert(contacts[1].depth == 0.5 and contacts[2].depth == 0.25 and contacts[4].depth == nil, "collisionSortContactsByDepth mismatch")
+	return true
+end
+
+return MathUtils
