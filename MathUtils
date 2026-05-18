@@ -122,18 +122,16 @@ function MathUtils.quaternionSlerp(
 		flip = true
 	end
 
-	if dot > 0.99995 then
-		local x = qx1 + t * (qx2 - qx1)
-		local y = qy1 + t * (qy2 - qy1)
-		local z = qz1 + t * (qz2 - qz1)
-		local w = qw1 + t * (qw2 - qw1)
-		local norm = invSqrt(x * x + y * y + z * z + w * w)
-		return x * norm, y * norm, z * norm, w * norm
-	end
+	dot = math.min(dot, 0.999999)
+
+	local lerpX = qx1 + t * (qx2 - qx1)
+	local lerpY = qy1 + t * (qy2 - qy1)
+	local lerpZ = qz1 + t * (qz2 - qz1)
+	local lerpW = qw1 + t * (qw2 - qw1)
 
 	local theta0 = math.acos(dot)
-	local theta = theta0 * t
 	local sinTheta0 = math.sin(theta0)
+	local theta = theta0 * t
 	local sinTheta = math.sin(theta)
 	local s0 = math.cos(theta) - dot * sinTheta / sinTheta0
 	local s1 = sinTheta / sinTheta0
@@ -142,11 +140,19 @@ function MathUtils.quaternionSlerp(
 		s1 = -s1
 	end
 
-	local x = s0 * qx1 + s1 * qx2
-	local y = s0 * qy1 + s1 * qy2
-	local z = s0 * qz1 + s1 * qz2
-	local w = s0 * qw1 + s1 * qw2
-	return x, y, z, w
+	local slerpX = s0 * qx1 + s1 * qx2
+	local slerpY = s0 * qy1 + s1 * qy2
+	local slerpZ = s0 * qz1 + s1 * qz2
+	local slerpW = s0 * qw1 + s1 * qw2
+
+	local blend = math.clamp((1.0 - dot) / 0.001, 0, 1)
+	local x = lerpX * (1 - blend) + slerpX * blend
+	local y = lerpY * (1 - blend) + slerpY * blend
+	local z = lerpZ * (1 - blend) + slerpZ * blend
+	local w = lerpW * (1 - blend) + slerpW * blend
+
+	local norm = invSqrt(x * x + y * y + z * z + w * w)
+	return x * norm, y * norm, z * norm, w * norm
 end
 
 function MathUtils.angleAxisToQuaternion(
@@ -679,9 +685,11 @@ function MathUtils.scalarMedian3(a: number, b: number, c: number): number
 end
 
 function MathUtils.scalarSmoothPulse(edge0: number, edge1: number, edge2: number, edge3: number, value: number): number
-	local a = math.clamp((value - edge0) / math.max(edge1 - edge0, EPSILON), 0, 1)
-	local b = math.clamp((value - edge2) / math.max(edge3 - edge2, EPSILON), 0, 1)
-	return math.clamp((a * a * (3 - 2 * a)) - (b * b * (3 - 2 * b)), 0, 1)
+	local riseT = math.clamp((value - edge0) / math.max(edge1 - edge0, EPSILON), 0, 1)
+	local rise = riseT * riseT * (3 - 2 * riseT)
+	local fallT = math.clamp((edge3 - value) / math.max(edge3 - edge2, EPSILON), 0, 1)
+	local fall = fallT * fallT * (3 - 2 * fallT)
+	return math.clamp(rise * fall, 0, 1)
 end
 
 function MathUtils.scalarBell01(value: number): number
@@ -1250,7 +1258,12 @@ end
 function MathUtils.cameraShakeFromTrauma(seed: number, time: number, trauma: number, amplitude: Vector3, frequency: number): Vector3
 	local strength = math.clamp(trauma, 0, 1) ^ 2
 	local t = time * frequency
-	return Vector3.new(math.noise(seed, t, 0), math.noise(seed, 0, t), math.noise(0, seed, t)) * strength * amplitude
+	local octaves = 3
+	return Vector3.new(
+		MathUtils.fbmNoise3D(seed, t, octaves),
+		MathUtils.fbmNoise3D(seed + 1, t, octaves),
+		MathUtils.fbmNoise3D(seed + 2, t, octaves)
+	) * strength * amplitude
 end
 
 function MathUtils.cameraCollisionPadding(distance: number, basePadding: number, distanceScale: number): number
@@ -1391,8 +1404,11 @@ function MathUtils.collisionBarycentricInside(barycentric: Vector3, tolerance: n
 end
 
 function MathUtils.collisionResolvePosition(position: Vector3, normal: Vector3, depth: number, slop: number?): Vector3
+	if depth <= (slop or 0) then
+		return position
+	end
 	local n = MathUtils.safeUnit(normal, Vector3.yAxis)
-	return position + n * math.max(depth - (slop or 0), 0)
+	return position + n * (depth - (slop or 0))
 end
 
 function MathUtils.collisionBounceVelocity(velocity: Vector3, normal: Vector3, restitution: number): Vector3
@@ -1766,9 +1782,28 @@ function MathUtils.noiseSigned(x: number, y: number?, z: number?): number
 	return math.clamp(math.noise(x, y or 0, z or 0), -1, 1)
 end
 
+function MathUtils.fbmNoise3D(seed: number, t: number, octaves: number): number
+	local sum = 0
+	local amp = 1
+	local freq = 1
+	local maxSum = 0
+	for i = 1, octaves do
+		sum += math.noise(seed + i * 0.137, t * freq, 0) * amp
+		maxSum += amp
+		amp *= 0.5
+		freq *= 2
+	end
+	return sum / maxSum
+end
+
 function MathUtils.noiseVector3(seed: number, time: number, frequency: number): Vector3
 	local t = time * frequency
-	return Vector3.new(math.noise(seed, t, 0), math.noise(seed, 0, t), math.noise(0, seed, t))
+	local octaves = 3
+	return Vector3.new(
+		MathUtils.fbmNoise3D(seed, t, octaves),
+		MathUtils.fbmNoise3D(seed + 1, t, octaves),
+		MathUtils.fbmNoise3D(seed + 2, t, octaves)
+	)
 end
 
 function MathUtils.noiseVector2(seed: number, time: number, frequency: number): Vector2
@@ -1902,13 +1937,19 @@ function MathUtils.collisionSphereAABB(center: Vector3, radius: number, minPoint
 end
 
 function MathUtils.collisionSphereOBB(center: Vector3, radius: number, boxCFrame: CFrame, halfExtents: Vector3): (boolean, Vector3, number, Vector3)
-	local localCenter = boxCFrame:PointToObjectSpace(center)
+	local right = boxCFrame.RightVector
+	local up = boxCFrame.UpVector
+	local look = boxCFrame.LookVector
+	local pos = boxCFrame.Position
+
+	local offset = center - pos
+	local localCenter = Vector3.new(offset:Dot(right), offset:Dot(up), offset:Dot(look))
 	local localClosest = Vector3.new(
 		math.clamp(localCenter.X, -halfExtents.X, halfExtents.X),
 		math.clamp(localCenter.Y, -halfExtents.Y, halfExtents.Y),
 		math.clamp(localCenter.Z, -halfExtents.Z, halfExtents.Z)
 	)
-	local closest = boxCFrame:PointToWorldSpace(localClosest)
+	local closest = pos + right * localClosest.X + up * localClosest.Y + look * localClosest.Z
 	local delta = center - closest
 	local distSq = delta:Dot(delta)
 	if distSq > radius * radius then
@@ -1931,7 +1972,7 @@ function MathUtils.collisionSphereOBB(center: Vector3, radius: number, boxCFrame
 		penetration = zPenetration
 	end
 	local localNormal = axis * MathUtils.signNonZero(localCenter:Dot(axis))
-	local normal = boxCFrame:VectorToWorldSpace(localNormal)
+	local normal = right * localNormal.X + up * localNormal.Y + look * localNormal.Z
 	return true, normal, radius + penetration, center - normal * radius
 end
 
@@ -1958,11 +1999,17 @@ function MathUtils.collisionAABBOverlapDetailed(minA: Vector3, maxA: Vector3, mi
 	local centerB = (minB + maxB) * 0.5
 	local depth = overlapX
 	local normal = Vector3.new(MathUtils.signNonZero(centerA.X - centerB.X), 0, 0)
-	if overlapY < depth then
+	local bestDiff = math.abs(centerA.X - centerB.X)
+
+	local yDiff = math.abs(centerA.Y - centerB.Y)
+	if overlapY < depth or (overlapY == depth and yDiff > bestDiff) then
 		depth = overlapY
 		normal = Vector3.new(0, MathUtils.signNonZero(centerA.Y - centerB.Y), 0)
+		bestDiff = yDiff
 	end
-	if overlapZ < depth then
+
+	local zDiff = math.abs(centerA.Z - centerB.Z)
+	if overlapZ < depth or (overlapZ == depth and zDiff > bestDiff) then
 		depth = overlapZ
 		normal = Vector3.new(0, 0, MathUtils.signNonZero(centerA.Z - centerB.Z))
 	end
@@ -2959,17 +3006,29 @@ function MathUtils.pointInAABB(point: Vector3, minPoint: Vector3, maxPoint: Vect
 end
 
 function MathUtils.closestPointOnOBB(point: Vector3, boxCFrame: CFrame, halfExtents: Vector3): Vector3
-	local localPoint = boxCFrame:PointToObjectSpace(point)
+	local right = boxCFrame.RightVector
+	local up = boxCFrame.UpVector
+	local look = boxCFrame.LookVector
+	local pos = boxCFrame.Position
+
+	local offset = point - pos
+	local localPoint = Vector3.new(offset:Dot(right), offset:Dot(up), offset:Dot(look))
 	local clamped = Vector3.new(
 		math.clamp(localPoint.X, -halfExtents.X, halfExtents.X),
 		math.clamp(localPoint.Y, -halfExtents.Y, halfExtents.Y),
 		math.clamp(localPoint.Z, -halfExtents.Z, halfExtents.Z)
 	)
-	return boxCFrame:PointToWorldSpace(clamped)
+	return pos + right * clamped.X + up * clamped.Y + look * clamped.Z
 end
 
 function MathUtils.pointInOBB(point: Vector3, boxCFrame: CFrame, halfExtents: Vector3): boolean
-	local localPoint = boxCFrame:PointToObjectSpace(point)
+	local right = boxCFrame.RightVector
+	local up = boxCFrame.UpVector
+	local look = boxCFrame.LookVector
+	local pos = boxCFrame.Position
+
+	local offset = point - pos
+	local localPoint = Vector3.new(offset:Dot(right), offset:Dot(up), offset:Dot(look))
 	return localPoint.X >= -halfExtents.X and localPoint.X <= halfExtents.X and
 		localPoint.Y >= -halfExtents.Y and localPoint.Y <= halfExtents.Y and
 		localPoint.Z >= -halfExtents.Z and localPoint.Z <= halfExtents.Z
@@ -3222,8 +3281,14 @@ function MathUtils.rayAABBIntersection(origin: Vector3, direction: Vector3, minP
 end
 
 function MathUtils.rayOBBIntersection(origin: Vector3, direction: Vector3, boxCFrame: CFrame, halfExtents: Vector3): (boolean, number?, number?)
-	local localOrigin = boxCFrame:PointToObjectSpace(origin)
-	local localDirection = boxCFrame:VectorToObjectSpace(direction)
+	local right = boxCFrame.RightVector
+	local up = boxCFrame.UpVector
+	local look = boxCFrame.LookVector
+	local pos = boxCFrame.Position
+
+	local offset = origin - pos
+	local localOrigin = Vector3.new(offset:Dot(right), offset:Dot(up), offset:Dot(look))
+	local localDirection = Vector3.new(direction:Dot(right), direction:Dot(up), direction:Dot(look))
 	return MathUtils.rayAABBIntersection(localOrigin, localDirection, -halfExtents, halfExtents)
 end
 
@@ -3253,9 +3318,16 @@ function MathUtils.sphereAABBOverlap(center: Vector3, radius: number, minPoint: 
 end
 
 function MathUtils.sphereOBBOverlap(center: Vector3, radius: number, boxCFrame: CFrame, halfExtents: Vector3): (boolean, Vector3, number)
-	local localCenter = boxCFrame:PointToObjectSpace(center)
+	local right = boxCFrame.RightVector
+	local up = boxCFrame.UpVector
+	local look = boxCFrame.LookVector
+	local pos = boxCFrame.Position
+
+	local offset = center - pos
+	local localCenter = Vector3.new(offset:Dot(right), offset:Dot(up), offset:Dot(look))
 	local hit, localNormal, depth = MathUtils.sphereAABBOverlap(localCenter, radius, -halfExtents, halfExtents)
-	return hit, boxCFrame:VectorToWorldSpace(localNormal), depth
+	local normal = right * localNormal.X + up * localNormal.Y + look * localNormal.Z
+	return hit, normal, depth
 end
 
 function MathUtils.capsuleCapsuleDistance(a0: Vector3, a1: Vector3, radiusA: number, b0: Vector3, b1: Vector3, radiusB: number): (number, Vector3, Vector3)
@@ -3512,7 +3584,7 @@ function MathUtils.closestPointsOnSegmentsDetailed(a1: Vector3, a2: Vector3, b1:
 end
 
 function MathUtils.distanceSquaredSegments(a1: Vector3, a2: Vector3, b1: Vector3, b2: Vector3): number
-	local p1, p2 = MathUtils.closestPointsOnSegmentsDetailed(a1, a2, b1, b2)
+	local p1, p2: Vector3 = MathUtils.closestPointsOnSegmentsDetailed(a1, a2, b1, b2)
 	local delta = p1 - p2
 	return delta:Dot(delta)
 end
@@ -4253,9 +4325,14 @@ function MathUtils.supportAABB(minPoint: Vector3, maxPoint: Vector3, direction: 
 end
 
 function MathUtils.supportOBB(boxCFrame: CFrame, halfExtents: Vector3, direction: Vector3): Vector3
-	local localDirection = boxCFrame:VectorToObjectSpace(direction)
+	local right = boxCFrame.RightVector
+	local up = boxCFrame.UpVector
+	local look = boxCFrame.LookVector
+	local pos = boxCFrame.Position
+
+	local localDirection = Vector3.new(direction:Dot(right), direction:Dot(up), direction:Dot(look))
 	local localPoint = Vector3.new(if localDirection.X >= 0 then halfExtents.X else -halfExtents.X, if localDirection.Y >= 0 then halfExtents.Y else -halfExtents.Y, if localDirection.Z >= 0 then halfExtents.Z else -halfExtents.Z)
-	return boxCFrame:PointToWorldSpace(localPoint)
+	return pos + right * localPoint.X + up * localPoint.Y + look * localPoint.Z
 end
 
 function MathUtils.supportCapsule(a: Vector3, b: Vector3, radius: number, direction: Vector3): Vector3
@@ -4478,6 +4555,1790 @@ function MathUtils.runSelfTests(): boolean
 	MathUtils.collisionSortContactsByDepth(contacts)
 	assert(contacts[1].depth == 0.5 and contacts[2].depth == 0.25 and contacts[4].depth == nil, "collisionSortContactsByDepth mismatch")
 	return true
+end
+
+function MathUtils.runBenchmarks(): { [string]: number }
+	local iterations = 100000
+	local results: { [string]: number } = {}
+
+	local function benchmark(name: string, fn: () -> ())
+		local startTime = os.clock()
+		for _ = 1, iterations do
+			fn()
+		end
+		results[name] = os.clock() - startTime
+	end
+
+	benchmark("collisionSphereAABB", function()
+		MathUtils.collisionSphereAABB(Vector3.new(0, 0, 0), 1, Vector3.new(-1, -1, -1), Vector3.new(1, 1, 1))
+	end)
+
+	benchmark("collisionAABBOverlapDetailed", function()
+		MathUtils.collisionAABBOverlapDetailed(Vector3.new(-1, -1, -1), Vector3.new(1, 1, 1), Vector3.new(0, 0, 0), Vector3.new(2, 2, 2))
+	end)
+
+	benchmark("quaternionSlerp", function()
+		MathUtils.quaternionSlerp(0, 0, 0, 1, 0, 1, 0, 0, 0.5)
+	end)
+
+	benchmark("closestPointOnSegment", function()
+		MathUtils.closestPointOnSegment(Vector3.new(2, 3, 0), Vector3.zero, Vector3.new(10, 0, 0))
+	end)
+
+	benchmark("springDamp", function()
+		MathUtils.springDamp(0, 10, 0, 25, 10, 1)
+	end)
+
+	benchmark("collisionSphereOBB", function()
+		MathUtils.collisionSphereOBB(Vector3.new(1.5, 0, 0), 1, CFrame.new(), Vector3.one)
+	end)
+
+	return results
+end
+
+type Matrix = { [number]: number }
+type VectorN = { [number]: number }
+
+function MathUtils.solveLinearSystemLU(A: Matrix, b: VectorN): VectorN?
+	local n = #b
+	if #A ~= n * n then
+		return nil
+	end
+
+	local L: Matrix = table.create(n * n, 0)
+	local U: Matrix = table.create(n * n, 0)
+	local P: { number } = table.create(n, 0)
+
+	for i = 1, n do
+		P[i] = i
+	end
+
+	for k = 1, n do
+		local maxRow = k
+		local maxVal = math.abs(A[(k - 1) * n + k])
+		for i = k + 1, n do
+			local val = math.abs(A[(i - 1) * n + k])
+			if val > maxVal then
+				maxRow = i
+				maxVal = val
+			end
+		end
+
+		if maxVal < EPSILON then
+			return nil
+		end
+
+		P[k], P[maxRow] = P[maxRow], P[k]
+
+		for i = 1, n do
+			A[(k - 1) * n + i], A[(maxRow - 1) * n + i] = A[(maxRow - 1) * n + i], A[(k - 1) * n + i]
+		end
+
+		U[(k - 1) * n + k] = A[(k - 1) * n + k]
+		L[(k - 1) * n + k] = 1
+
+		for i = k + 1, n do
+			L[(i - 1) * n + k] = A[(i - 1) * n + k] / U[(k - 1) * n + k]
+			U[(k - 1) * n + i] = A[(k - 1) * n + i]
+		end
+
+		for j = k + 1, n do
+			for i = k + 1, n do
+				A[(i - 1) * n + j] = A[(i - 1) * n + j] - L[(i - 1) * n + k] * U[(k - 1) * n + j]
+			end
+		end
+	end
+
+	local Pb: VectorN = table.create(n, 0)
+	for i = 1, n do
+		Pb[i] = b[P[i]]
+	end
+
+	local y: VectorN = table.create(n, 0)
+	for i = 1, n do
+		local sum = Pb[i]
+		for j = 1, i - 1 do
+			sum = sum - L[(i - 1) * n + j] * y[j]
+		end
+		y[i] = sum
+	end
+
+	local x: VectorN = table.create(n, 0)
+	for i = n, 1, -1 do
+		local sum = y[i]
+		for j = i + 1, n do
+			sum = sum - U[(i - 1) * n + j] * x[j]
+		end
+		x[i] = sum / U[(i - 1) * n + i]
+	end
+
+	return x
+end
+
+function MathUtils.conjugateGradient(A: (VectorN) -> VectorN, b: VectorN, maxIter: number, tolerance: number): VectorN
+	local n = #b
+	local x: VectorN = table.create(n, 0)
+	local r: VectorN = table.create(n, 0)
+	for i = 1, n do
+		r[i] = b[i]
+	end
+	local p: VectorN = table.create(n, 0)
+	for i = 1, n do
+		p[i] = r[i]
+	end
+
+	local rsold = 0
+	for i = 1, n do
+		rsold = rsold + r[i] * r[i]
+	end
+
+	for iter = 1, maxIter do
+		local Ap = A(p)
+		local pAp = 0
+		for i = 1, n do
+			pAp = pAp + p[i] * Ap[i]
+		end
+
+		if math.abs(pAp) < EPSILON then
+			break
+		end
+
+		local alpha = rsold / pAp
+		for i = 1, n do
+			x[i] = x[i] + alpha * p[i]
+			r[i] = r[i] - alpha * Ap[i]
+		end
+
+		local rsnew = 0
+		for i = 1, n do
+			rsnew = rsnew + r[i] * r[i]
+		end
+
+		if math.sqrt(rsnew) < tolerance then
+			break
+		end
+
+		local beta = rsnew / rsold
+		for i = 1, n do
+			p[i] = r[i] + beta * p[i]
+		end
+
+		rsold = rsnew
+	end
+
+	return x
+end
+
+function MathUtils.hermiteInterpolation(p0: number, p1: number, m0: number, m1: number, t: number): number
+	local t2 = t * t
+	local t3 = t2 * t
+	local h00 = 2 * t3 - 3 * t2 + 1
+	local h10 = t3 - 2 * t2 + t
+	local h01 = -2 * t3 + 3 * t2
+	local h11 = t3 - t2
+	return h00 * p0 + h10 * m0 + h01 * p1 + h11 * m1
+end
+
+function MathUtils.monotonicCubicSpline(x: { number }, y: { number }): (number) -> number
+	local n = #x
+	if n < 2 then
+		return function(t: number): number
+			return y[1] or 0
+		end
+	end
+
+	local delta: { number } = table.create(n - 1, 0)
+	for i = 1, n - 1 do
+		delta[i] = (y[i + 1] - y[i]) / (x[i + 1] - x[i])
+	end
+
+	local m: { number } = table.create(n, 0)
+	for i = 2, n - 1 do
+		if delta[i - 1] * delta[i] <= 0 then
+			m[i] = 0
+		else
+			m[i] = 2 / (1 / delta[i - 1] + 1 / delta[i])
+		end
+	end
+	m[1] = delta[1]
+	m[n] = delta[n - 1]
+
+	return function(t: number): number
+		if t <= x[1] then
+			return y[1]
+		end
+		if t >= x[n] then
+			return y[n]
+		end
+
+		local idx = 1
+		while idx < n and x[idx + 1] < t do
+			idx = idx + 1
+		end
+
+		local h = x[idx + 1] - x[idx]
+		local t0 = (t - x[idx]) / h
+		local t1 = t0 - 1
+
+		local h00 = (1 + 2 * t0) * t1 * t1
+		local h10 = t0 * t1 * t1
+		local h01 = t0 * t0 * (3 - 2 * t0)
+		local h11 = t0 * t0 * t1
+
+		return h00 * y[idx] + h10 * h * m[idx] + h01 * y[idx + 1] + h11 * h * m[idx + 1]
+	end
+end
+
+function MathUtils.bspline(k: number, degree: number, i: number, t: number, knots: { number }): number
+	if degree == 0 then
+		if (knots[i] <= t and t < knots[i + 1]) or (i == #knots - degree - 1 and t == knots[i + 1]) then
+			return 1
+		else
+			return 0
+		end
+	end
+
+	local denom1 = knots[i + degree] - knots[i]
+	local term1 = 0
+	if math.abs(denom1) > EPSILON then
+		term1 = ((t - knots[i]) / denom1) * MathUtils.bspline(k, degree - 1, i, t, knots)
+	end
+
+	local denom2 = knots[i + degree + 1] - knots[i + 1]
+	local term2 = 0
+	if math.abs(denom2) > EPSILON then
+		term2 = ((knots[i + degree + 1] - t) / denom2) * MathUtils.bspline(k, degree - 1, i + 1, t, knots)
+	end
+
+	return term1 + term2
+end
+
+function MathUtils.evaluateBSpline(knots: { number }, controlPoints: { number }, degree: number, t: number): number
+	local n = #controlPoints
+	local result = 0
+	for i = 1, n do
+		result = result + controlPoints[i] * MathUtils.bspline(n, degree, i, t, knots)
+	end
+	return result
+end
+
+function MathUtils.qrDecompositionHouseholder(A: Matrix, m: number, n: number): (Matrix, Matrix)
+	local Q: Matrix = table.create(m * m, 0)
+	local R: Matrix = table.create(m * n, 0)
+
+	for i = 1, m do
+		Q[(i - 1) * m + i] = 1
+	end
+
+	for i = 1, n do
+		for j = 1, n do
+			R[(i - 1) * n + j] = A[(i - 1) * n + j]
+		end
+	end
+
+	for k = 1, n do
+		local x: VectorN = table.create(m - k + 1, 0)
+		for i = k, m do
+			x[i - k + 1] = R[(i - 1) * n + k]
+		end
+
+		local normX = 0
+		for i = 1, #x do
+			normX = normX + x[i] * x[i]
+		end
+		normX = math.sqrt(normX)
+
+		if normX < EPSILON then
+			break
+		end
+
+		local alpha = -x[1] / math.abs(x[1]) * normX
+		local v: VectorN = table.create(#x, 0)
+		for i = 1, #x do
+			v[i] = x[i]
+		end
+		v[1] = v[1] - alpha
+
+		local normV = 0
+		for i = 1, #v do
+			normV = normV + v[i] * v[i]
+		end
+
+		if normV > EPSILON then
+			local beta = 2 / normV
+
+			for j = k, n do
+				local dot = 0
+				for i = k, m do
+					dot = dot + R[(i - 1) * n + j] * v[i - k + 1]
+				end
+				for i = k, m do
+					R[(i - 1) * n + j] = R[(i - 1) * n + j] - beta * v[i - k + 1] * dot
+				end
+			end
+
+			for j = 1, m do
+				local dot = 0
+				for i = k, m do
+					dot = dot + Q[(j - 1) * m + i] * v[i - k + 1]
+				end
+				for i = k, m do
+					Q[(j - 1) * m + i] = Q[(j - 1) * m + i] - beta * v[i - k + 1] * dot
+				end
+			end
+		end
+	end
+
+	return Q, R
+end
+
+function MathUtils.linearLeastSquares(A: Matrix, b: VectorN, m: number, n: number): VectorN
+	local Q, R = MathUtils.qrDecompositionHouseholder(A, m, n)
+
+	local Qtb: VectorN = table.create(n, 0)
+	for i = 1, n do
+		local sum = 0
+		for j = 1, m do
+			sum = sum + Q[(i - 1) * m + j] * b[j]
+		end
+		Qtb[i] = sum
+	end
+
+	local x: VectorN = table.create(n, 0)
+	for i = n, 1, -1 do
+		local sum = Qtb[i]
+		for j = i + 1, n do
+			sum = sum - R[(i - 1) * n + j] * x[j]
+		end
+		if math.abs(R[(i - 1) * n + i]) > EPSILON then
+			x[i] = sum / R[(i - 1) * n + i]
+		else
+			x[i] = 0
+		end
+	end
+
+	return x
+end
+
+type Simplex = { [number]: Vector3 }
+type SupportFunction = (Vector3) -> Vector3
+
+function MathUtils.gjkSupport(shapeA: SupportFunction, shapeB: SupportFunction, direction: Vector3): Vector3
+	return shapeA(direction) - shapeB(-direction)
+end
+
+function MathUtils.gjkDoSimplex(simplex: Simplex, direction: Vector3): (boolean, Vector3, Simplex)
+	local a = (simplex[#simplex] :: Vector3)
+	local b = (simplex[#simplex - 1] :: Vector3)
+	local c = (simplex[#simplex - 2] :: Vector3)
+
+	local ao = -a
+	local ab = b - a
+	local ac = c - a
+
+	if #simplex == 3 then
+		local abPerp = ac:Cross(ab):Cross(ab)
+		local acPerp = ab:Cross(ac):Cross(ac)
+
+		if abPerp.Magnitude >= EPSILON or acPerp.Magnitude >= EPSILON then
+			if abPerp:Dot(ao) > 0 then
+				table.remove(simplex, (#simplex))
+				return false, abPerp.Unit, simplex
+			else
+				if acPerp:Dot(ao) > 0 then
+					table.remove(simplex, (#simplex - 1))
+					return false, acPerp.Unit, simplex
+				else
+					return true, Vector3.zero, simplex
+				end
+			end
+		end
+
+		table.remove(simplex, 1)
+		a = (simplex[#simplex] :: Vector3)
+		b = (simplex[#simplex - 1] :: Vector3)
+		ao = -a
+		ab = b - a
+	end
+
+	local abPerp = ab:Cross(ao):Cross(ab)
+	if abPerp.Magnitude < EPSILON then
+		return false, ao.Unit, simplex
+	end
+	return false, abPerp.Unit, simplex
+end
+
+function MathUtils.gjkCollision(shapeA: SupportFunction, shapeB: SupportFunction): (boolean, Simplex)
+	local direction = Vector3.new(1, 0, 0)
+	local simplex: Simplex = {}
+
+	table.insert(simplex, MathUtils.gjkSupport(shapeA, shapeB, direction))
+	direction = -(simplex[1] :: Vector3)
+
+	for _ = 1, 64 do
+		local newPoint = MathUtils.gjkSupport(shapeA, shapeB, direction)
+
+		if newPoint:Dot(newPoint) < EPSILON then
+			return true, simplex
+		end
+
+		local isDuplicate = false
+		for i = 1, #simplex do
+			local existing = simplex[i] :: Vector3
+			if (existing - newPoint):Dot(existing - newPoint) < EPSILON then
+				isDuplicate = true
+				break
+			end
+		end
+		if isDuplicate then
+			return false, simplex
+		end
+
+		table.insert(simplex, newPoint)
+
+		if (simplex[#simplex] :: Vector3):Dot(direction) < 0 then
+			return false, simplex
+		end
+
+		local contains, newDirection, newSimplex = MathUtils.gjkDoSimplex(simplex, direction)
+
+		if contains then
+			return true, newSimplex
+		end
+
+		direction = newDirection
+		simplex = newSimplex
+	end
+
+	return false, simplex
+end
+
+type Face = { normal: Vector3, edge: Vector3, distance: number }
+
+function MathUtils.epaPenetration(shapeA: SupportFunction, shapeB: SupportFunction, simplex: Simplex): (number, Vector3)
+	local faces: { Face } = {}
+
+	for i = 1, #simplex do
+		local j = i % #simplex + 1
+		local v_i = (simplex[i] :: Vector3)
+		local v_j = (simplex[j] :: Vector3)
+		local edge = v_j - v_i
+		local cross = edge:Cross((simplex[#simplex] :: Vector3))
+		if cross.Magnitude < EPSILON then
+			cross = Vector3.new(0, 1, 0)
+		end
+		local normal = cross.Unit
+		local distance = normal:Dot(v_i)
+		table.insert(faces, { normal = normal, edge = edge, distance = distance } :: Face)
+	end
+
+	for _ = 1, 64 do
+		local minFaceIndex = 1
+		local minDistance = faces[1].distance
+
+		for i = 2, #faces do
+			if faces[i].distance < minDistance then
+				minFaceIndex = i
+				minDistance = faces[i].distance
+			end
+		end
+
+		local direction = faces[minFaceIndex].normal
+		local support = MathUtils.gjkSupport(shapeA, shapeB, direction)
+		local distance = direction:Dot(support)
+
+		if distance - minDistance < EPSILON then
+			return minDistance, direction
+		end
+
+		local newFaces: { Face } = {}
+		local minFace = faces[minFaceIndex]
+		local minEdge = minFace.edge
+
+		for i = 1, #simplex do
+			local j = i % #simplex + 1
+			local v_i = (simplex[i] :: Vector3)
+			local v_j = (simplex[j] :: Vector3)
+			local edge = v_j - v_i
+			local cross = edge:Cross(support)
+			if cross.Magnitude < EPSILON then
+				cross = Vector3.new(0, 1, 0)
+			end
+			local normal = cross.Unit
+			local dist = normal:Dot(v_i)
+			table.insert(newFaces, { normal = normal, edge = edge, distance = dist } :: Face)
+		end
+
+		for i = 1, #newFaces do
+			if newFaces[i].distance > 0 then
+				table.insert(faces, newFaces[i])
+			end
+		end
+
+		table.remove(faces, (minFaceIndex))
+	end
+
+	return 0, Vector3.zero
+end
+
+function MathUtils.quickHull3D(points: { Vector3 }): { Vector3 }
+	if #points < 4 then
+		return points
+	end
+
+	local function findExtremePoints(): (Vector3, Vector3, Vector3, Vector3, Vector3, Vector3)
+		local minX, maxX, minY, maxY, minZ, maxZ = points[1], points[1], points[1], points[1], points[1], points[1]
+		for _, p in points do
+			if p.X < minX.X then minX = p end
+			if p.X > maxX.X then maxX = p end
+			if p.Y < minY.Y then minY = p end
+			if p.Y > maxY.Y then maxY = p end
+			if p.Z < minZ.Z then minZ = p end
+			if p.Z > maxZ.Z then maxZ = p end
+		end
+		return minX, maxX, minY, maxY, minZ, maxZ
+	end
+
+	local minX, maxX, minY, maxY, minZ, maxZ = findExtremePoints()
+
+	local dist1 = (maxX - minX).Magnitude
+	local dist2 = (maxY - minY).Magnitude
+	local dist3 = (maxZ - minZ).Magnitude
+
+	local p1, p2
+	if dist1 >= dist2 and dist1 >= dist3 then
+		p1, p2 = minX, maxX
+	elseif dist2 >= dist1 and dist2 >= dist3 then
+		p1, p2 = minY, maxY
+	else
+		p1, p2 = minZ, maxZ
+	end
+
+	local p3: Vector3
+	local maxDist = 0
+	for _, p in points do
+		local dist = (p - p1):Cross(p - p2).Magnitude
+		if dist > maxDist then
+			maxDist = dist
+			p3 = p
+		end
+	end
+
+	local p4: Vector3
+	maxDist = 0
+	for _, p in points do
+		local normal = (p2 - p1):Cross(p3 - p1)
+		local dist = math.abs(normal:Dot(p - p1))
+		if dist > maxDist then
+			maxDist = dist
+			p4 = p
+		end
+	end
+
+	local hull: { Vector3 } = { p1, p2, p3, p4 }
+	return hull
+end
+
+type Triangle2D = { [number]: Vector2 }
+
+function MathUtils.delaunayTriangulation(points: { Vector2 }): { Triangle2D }
+	if #points < 3 then
+		return {}
+	end
+
+	local superTriangle = {
+		Vector2.new(-10000, -10000),
+		Vector2.new(10000, -10000),
+		Vector2.new(0, 10000)
+	}
+
+	local triangles: { Triangle2D } = { superTriangle }
+
+	for _, point in points do
+		local badTriangles: { Triangle2D } = {}
+
+		for _, triangle in triangles do
+			local circumcenter = MathUtils.circumcenter(triangle[1], triangle[2], triangle[3])
+			local radius = (circumcenter - triangle[1]).Magnitude
+			if (point - circumcenter).Magnitude < radius then
+				table.insert(badTriangles, triangle)
+			end
+		end
+
+		local polygon: { Vector2 } = {}
+		for _, triangle in badTriangles do
+			local edges = {
+				{ (triangle[1] :: Vector2), (triangle[2] :: Vector2) },
+				{ (triangle[2] :: Vector2), (triangle[3] :: Vector2) },
+				{ (triangle[3] :: Vector2), (triangle[1] :: Vector2) }
+			}
+
+			for _, edge in edges do
+				local shared = false
+				for _, otherTriangle in badTriangles do
+					local otherEdges = {
+						{ (otherTriangle[1] :: Vector2), (otherTriangle[2] :: Vector2) },
+						{ (otherTriangle[2] :: Vector2), (otherTriangle[3] :: Vector2) },
+						{ (otherTriangle[3] :: Vector2), (otherTriangle[1] :: Vector2) }
+					}
+					for _, otherEdge in otherEdges do
+						if (edge[1] == otherEdge[1] and edge[2] == otherEdge[2]) or
+						   (edge[1] == otherEdge[2] and edge[2] == otherEdge[1]) then
+							shared = true
+							break
+						end
+					end
+					if shared then break end
+				end
+				if not shared then
+					table.insert(polygon, edge[1])
+					table.insert(polygon, edge[2])
+				end
+			end
+		end
+
+		local newTriangles: { Triangle2D } = {}
+		for i = 1, #polygon, 2 do
+			table.insert(newTriangles, { polygon[i] :: Vector2, polygon[i + 1] :: Vector2, point } :: Triangle2D)
+		end
+
+		local remainingTriangles: { Triangle2D } = {}
+		for _, triangle in triangles do
+			local isBad = false
+			for _, badTriangle in badTriangles do
+				if triangle == badTriangle then
+					isBad = true
+					break
+				end
+			end
+			if not isBad then
+				table.insert(remainingTriangles, triangle)
+			end
+		end
+
+		triangles = remainingTriangles
+		for _, newTriangle in newTriangles do
+			table.insert(triangles, newTriangle)
+		end
+	end
+
+	local result: { Triangle2D } = {}
+	for _, triangle in triangles do
+		local usesSuper = false
+		for _, vertex in triangle do
+			for _, superVertex in superTriangle do
+				if vertex == superVertex then
+					usesSuper = true
+					break
+				end
+			end
+			if usesSuper then break end
+		end
+		if not usesSuper then
+			table.insert(result, triangle)
+		end
+	end
+
+	return result
+end
+
+function MathUtils.circumcenter(a: Vector2, b: Vector2, c: Vector2): Vector2
+	local d = 2 * (a.X * (b.Y - c.Y) + b.X * (c.Y - a.Y) + c.X * (a.Y - b.Y))
+	if math.abs(d) < EPSILON then
+		return (a + b + c) / 3
+	end
+
+	local ux = ((a.X * a.X + a.Y * a.Y) * (b.Y - c.Y) + (b.X * b.X + b.Y * b.Y) * (c.Y - a.Y) + (c.X * c.X + c.Y * c.Y) * (a.Y - b.Y)) / d
+	local uy = ((a.X * a.X + a.Y * a.Y) * (c.X - b.X) + (b.X * b.X + b.Y * b.Y) * (a.X - c.X) + (c.X * c.X + c.Y * c.Y) * (b.X - a.X)) / d
+
+	return Vector2.new(ux, uy)
+end
+
+function MathUtils.sutherlandHodgmanClip(subjectPolygon: { Vector2 }, clipPolygon: { Vector2 }): { Vector2 }
+	local outputList = subjectPolygon
+
+	for cpIndex = 1, #clipPolygon do
+		local cp1 = clipPolygon[cpIndex]
+		local cp2 = clipPolygon[cpIndex % #clipPolygon + 1]
+
+		local inputList = outputList
+		outputList = {}
+
+		if #inputList == 0 then
+			break
+		end
+
+		for sIndex = 1, #inputList do
+			local s = inputList[sIndex]
+			local e = inputList[sIndex % #inputList + 1]
+
+			if MathUtils.isInside(e, cp1, cp2) then
+				if not MathUtils.isInside(s, cp1, cp2) then
+					table.insert(outputList, MathUtils.intersection(s, e, cp1, cp2))
+				end
+				table.insert(outputList, e)
+			elseif MathUtils.isInside(s, cp1, cp2) then
+				table.insert(outputList, MathUtils.intersection(s, e, cp1, cp2))
+			end
+		end
+	end
+
+	return outputList
+end
+
+function MathUtils.isInside(p: Vector2, cp1: Vector2, cp2: Vector2): boolean
+	return (cp2.X - cp1.X) * (p.Y - cp1.Y) > (cp2.Y - cp1.Y) * (p.X - cp1.X)
+end
+
+function MathUtils.intersection(s: Vector2, e: Vector2, cp1: Vector2, cp2: Vector2): Vector2
+	local dc = cp1 - cp2
+	local dp = s - e
+	local n1 = cp1.X * cp2.Y - cp1.Y * cp2.X
+	local n2 = s.X * e.Y - s.Y * e.X
+	local n3 = 1 / (dc.X * dp.Y - dc.Y * dp.X)
+	return Vector2.new((n1 * dp.X - n2 * dc.X) * n3, (n1 * dp.Y - n2 * dc.Y) * n3)
+end
+
+function MathUtils.polygonSelfIntersection(points: { Vector2 }): boolean
+	local n = #points
+	for i = 1, n do
+		local p1 = points[i]
+		local p2 = points[i % n + 1]
+		for j = i + 2, n do
+			local q1 = points[j]
+			local q2 = points[j % n + 1]
+			if j == n and i == 1 then
+			else
+				if MathUtils.segmentsIntersect(p1, p2, q1, q2) then
+					return true
+				end
+			end
+		end
+	end
+	return false
+end
+
+function MathUtils.segmentsIntersect(p1: Vector2, p2: Vector2, q1: Vector2, q2: Vector2): boolean
+	local function ccw(a: Vector2, b: Vector2, c: Vector2): boolean
+		return (c.Y - a.Y) * (b.X - a.X) > (b.Y - a.Y) * (c.X - a.X)
+	end
+
+	return ccw(p1, q1, q2) ~= ccw(p2, q1, q2) and ccw(p1, p2, q1) ~= ccw(p1, p2, q2)
+end
+
+type ButterworthFilterState = { x1: number, x2: number, y1: number, y2: number }
+type BandpassFilterState = { x1: number, x2: number, y1: number, y2: number, hp1: number, hp2: number }
+type NotchFilterState = { x1: number, x2: number, y1: number, y2: number }
+
+function MathUtils.butterworthLowpass2ndOrder(cutoff: number, sampleRate: number): (ButterworthFilterState, number) -> (ButterworthFilterState, number)
+	local omega = 2 * math.pi * cutoff / sampleRate
+	local sinOmega = math.sin(omega)
+	local cosOmega = math.cos(omega)
+	local alpha = sinOmega / math.sqrt(2)
+
+	local b0 = (1 - cosOmega) / 2
+	local b1 = 1 - cosOmega
+	local b2 = (1 - cosOmega) / 2
+	local a0 = 1 + alpha
+	local a1 = -2 * cosOmega
+	local a2 = 1 - alpha
+
+	return function(state: ButterworthFilterState, input: number): (ButterworthFilterState, number)
+		if state == nil then
+			state = { x1 = 0, x2 = 0, y1 = 0, y2 = 0 }
+		end
+
+		local output = (b0 * input + b1 * state.x1 + b2 * state.x2 - a1 * state.y1 - a2 * state.y2) / a0
+
+		state.x2 = state.x1
+		state.x1 = input
+		state.y2 = state.y1
+		state.y1 = output
+
+		return state, output
+	end
+end
+
+function MathUtils.bandpassFilter(lowCutoff: number, highCutoff: number, sampleRate: number): (BandpassFilterState, number) -> (BandpassFilterState, number)
+	local omegaLow = 2 * math.pi * lowCutoff / sampleRate
+	local omegaHigh = 2 * math.pi * highCutoff / sampleRate
+	local cosLow = math.cos(omegaLow)
+	local cosHigh = math.cos(omegaHigh)
+	local alphaLow = math.sin(omegaLow) / math.sqrt(2)
+	local alphaHigh = math.sin(omegaHigh) / math.sqrt(2)
+
+	local b0 = alphaHigh
+	local b1 = 0
+	local b2 = -alphaHigh
+	local a0 = 1 + alphaHigh
+	local a1 = -2 * cosHigh
+	local a2 = 1 - alphaHigh
+
+	local b0Low = (1 - cosLow) / 2
+	local b1Low = 1 - cosLow
+	local b2Low = (1 - cosLow) / 2
+	local a0Low = 1 + alphaLow
+	local a1Low = -2 * cosLow
+	local a2Low = 1 - alphaLow
+
+	return function(state: BandpassFilterState, input: number): (BandpassFilterState, number)
+		if state == nil then
+			state = { x1 = 0, x2 = 0, y1 = 0, y2 = 0, hp1 = 0, hp2 = 0 }
+		end
+
+		local hp = (b0 * input + b1 * state.x1 + b2 * state.x2 - a1 * state.hp1 - a2 * state.hp2) / a0
+		state.hp2 = state.hp1
+		state.hp1 = hp
+
+		local output = (b0Low * hp + b1Low * state.hp1 + b2Low * state.hp2 - a1Low * state.y1 - a2Low * state.y2) / a0Low
+
+		state.x2 = state.x1
+		state.x1 = input
+		state.y2 = state.y1
+		state.y1 = output
+
+		return state, output
+	end
+end
+
+function MathUtils.notchFilter(notchFreq: number, q: number, sampleRate: number): (NotchFilterState, number) -> (NotchFilterState, number)
+	local omega = 2 * math.pi * notchFreq / sampleRate
+	local cosOmega = math.cos(omega)
+	local alpha = math.sin(omega) / (2 * q)
+
+	local b0 = 1
+	local b1 = -2 * cosOmega
+	local b2 = 1
+	local a0 = 1 + alpha
+	local a1 = -2 * cosOmega
+	local a2 = 1 - alpha
+
+	return function(state: NotchFilterState, input: number): (NotchFilterState, number)
+		if state == nil then
+			state = { x1 = 0, x2 = 0, y1 = 0, y2 = 0 }
+		end
+
+		local output = (b0 * input + b1 * state.x1 + b2 * state.x2 - a1 * state.y1 - a2 * state.y2) / a0
+
+		state.x2 = state.x1
+		state.x1 = input
+		state.y2 = state.y1
+		state.y1 = output
+
+		return state, output
+	end
+end
+
+type MovingAverageState = { buffer: { [number]: number }, index: number, sum: number }
+
+function MathUtils.movingAverageFilter(windowSize: number): (MovingAverageState, number) -> (MovingAverageState, number)
+	return function(state: MovingAverageState, input: number): (MovingAverageState, number)
+		if state == nil then
+			state = { buffer = table.create(windowSize, 0), index = 1, sum = 0 }
+		end
+
+		state.sum = state.sum - state.buffer[state.index] + input
+		state.buffer[state.index] = input
+		state.index = state.index % windowSize + 1
+
+		return state, state.sum / windowSize
+	end
+end
+
+type MedianFilterState = { buffer: { [number]: number } }
+
+function MathUtils.medianFilter(windowSize: number): (MedianFilterState, number) -> (MedianFilterState, number)
+	return function(state: MedianFilterState, input: number): (MedianFilterState, number)
+		if state == nil then
+			state = { buffer = table.create(windowSize, 0) }
+		end
+
+		table.insert(state.buffer, input)
+		if #state.buffer > windowSize then
+			table.remove(state.buffer, (1))
+		end
+
+		local sorted = table.create(#state.buffer, 0)
+		for i, v in state.buffer do
+			sorted[i] = v
+		end
+		table.sort(sorted)
+
+		local median
+		if #sorted % 2 == 0 then
+			median = (sorted[#sorted / 2] + sorted[#sorted / 2 + 1]) / 2
+		else
+			median = sorted[math.floor(#sorted / 2) + 1]
+		end
+
+		return state, median
+	end
+end
+
+type KalmanFilter1DState = { x: number, p: number, q: number, r: number }
+type KalmanFilterState = { x: VectorN, p: Matrix, q: Matrix, r: Matrix }
+
+function MathUtils.kalmanFilter1D(initialState: number, initialCovariance: number, processNoise: number, measurementNoise: number): (KalmanFilter1DState, number) -> (KalmanFilter1DState, number)
+	return function(state: KalmanFilter1DState, measurement: number): (KalmanFilter1DState, number)
+		if state == nil then
+			state = { x = initialState, p = initialCovariance, q = processNoise, r = measurementNoise }
+		end
+
+		state.p = state.p + state.q
+		local k = state.p / (state.p + state.r)
+		state.x = state.x + k * (measurement - state.x)
+		state.p = (1 - k) * state.p
+
+		return state, state.x
+	end
+end
+
+
+function MathUtils.kalmanFilter(initialState: VectorN, initialCovariance: Matrix, processNoise: Matrix, measurementNoise: Matrix): (KalmanFilterState, VectorN) -> (KalmanFilterState, VectorN)
+	return function(state: KalmanFilterState, measurement: VectorN): (KalmanFilterState, VectorN)
+		if state == nil then
+			state = { x = initialState, p = initialCovariance, q = processNoise, r = measurementNoise }
+		end
+
+		local n = #state.x
+		for i = 1, n do
+			for j = 1, n do
+				state.p[(i - 1) * n + j] = state.p[(i - 1) * n + j] + state.q[(i - 1) * n + j]
+			end
+		end
+
+		local y: VectorN = table.create(n, 0)
+		for i = 1, n do
+			y[i] = measurement[i] - state.x[i]
+		end
+
+		local s: Matrix = table.create(n * n, 0)
+		for i = 1, n do
+			for j = 1, n do
+				for k = 1, n do
+					s[(i - 1) * n + j] = s[(i - 1) * n + j] + state.p[(i - 1) * n + k]
+				end
+				s[(i - 1) * n + j] = s[(i - 1) * n + j] + state.r[(i - 1) * n + j]
+			end
+		end
+
+		local k: Matrix = table.create(n * n, 0)
+		for i = 1, n do
+			for j = 1, n do
+				k[(i - 1) * n + j] = state.p[(i - 1) * n + j]
+			end
+		end
+
+		for i = 1, n do
+			state.x[i] = state.x[i] + y[i]
+		end
+
+		for i = 1, n do
+			for j = 1, n do
+				state.p[(i - 1) * n + j] = state.p[(i - 1) * n + j] - k[(i - 1) * n + j]
+			end
+		end
+
+		return state, state.x
+	end
+end
+
+
+function MathUtils.statisticsMean(data: { number }): number
+	if #data == 0 then return 0 end
+	local sum = 0
+	for _, v in data do
+		sum = sum + v
+	end
+	return sum / #data
+end
+
+function MathUtils.statisticsVariance(data: { number }): number
+	if #data < 2 then return 0 end
+	local mean = MathUtils.statisticsMean(data)
+	local sum = 0
+	for _, v in data do
+		sum = sum + (v - mean) ^ 2
+	end
+	return sum / (#data - 1)
+end
+
+function MathUtils.statisticsCovariance(data1: { number }, data2: { number }): number
+	if #data1 ~= #data2 or #data1 < 2 then return 0 end
+	local mean1 = MathUtils.statisticsMean(data1)
+	local mean2 = MathUtils.statisticsMean(data2)
+	local sum = 0
+	for i = 1, #data1 do
+		sum = sum + (data1[i] - mean1) * (data2[i] - mean2)
+	end
+	return sum / (#data1 - 1)
+end
+
+function MathUtils.statisticsPercentile(data: { number }, percentile: number): number
+	if #data == 0 then return 0 end
+	local sorted = table.create(#data, 0)
+	for i, v in data do
+		sorted[i] = v
+	end
+	table.sort(sorted)
+	local index = math.ceil(percentile * #sorted)
+	return sorted[math.clamp(index, 1, #sorted)]
+end
+
+function MathUtils.statisticsKurtosis(data: { number }): number
+	if #data < 4 then return 0 end
+	local mean = MathUtils.statisticsMean(data)
+	local variance = MathUtils.statisticsVariance(data)
+	if variance < EPSILON then return 0 end
+	local stdDev = math.sqrt(variance)
+	local sum = 0
+	for _, v in data do
+		sum = sum + ((v - mean) / stdDev) ^ 4
+	end
+	return (sum / #data) - 3
+end
+
+function MathUtils.randomNormal(mean: number, stddev: number): number
+	local u1 = math.random()
+	local u2 = math.random()
+	while u1 == 0 do u1 = math.random() end
+	local z0 = math.sqrt(-2 * math.log(u1)) * math.cos(2 * math.pi * u2)
+	local z1 = math.sqrt(-2 * math.log(u1)) * math.sin(2 * math.pi * u2)
+	return mean + z0 * stddev
+end
+
+function MathUtils.randomExponential(lambda: number): number
+	return -math.log(1 - math.random()) / lambda
+end
+
+function MathUtils.randomUniformOnDisk(): Vector2
+	local r = math.sqrt(math.random())
+	local theta = 2 * math.pi * math.random()
+	return Vector2.new(r * math.cos(theta), r * math.sin(theta))
+end
+
+function MathUtils.randomUniformOnSphere(): Vector3
+	local u = math.random() * 2 - 1
+	local theta = math.random() * 2 * math.pi
+	local r = math.sqrt(1 - u * u)
+	return Vector3.new(r * math.cos(theta), u, r * math.sin(theta))
+end
+
+type AABB = { min: Vector3, max: Vector3 }
+type BVHNode = { aabb: AABB, left: BVHNode?, right: BVHNode?, primitiveIndex: number? }
+type OctreeNode = { center: Vector3, halfSize: Vector3, children: { [number]: OctreeNode? }, points: { [number]: Vector3 } }
+
+
+function MathUtils.createBVH(primitives: { AABB }): BVHNode?
+	if #primitives == 0 then
+		return nil
+	end
+
+	if #primitives == 1 then
+		return {
+			aabb = primitives[1],
+			left = nil,
+			right = nil,
+			primitiveIndex = 1
+		}
+	end
+
+	local function combineAABB(a: AABB, b: AABB): AABB
+		return {
+			min = Vector3.new(
+				math.min(a.min.X, b.min.X),
+				math.min(a.min.Y, b.min.Y),
+				math.min(a.min.Z, b.min.Z)
+			),
+			max = Vector3.new(
+				math.max(a.max.X, b.max.X),
+				math.max(a.max.Y, b.max.Y),
+				math.max(a.max.Z, b.max.Z)
+			)
+		}
+	end
+
+	local function aabbSurfaceArea(aabb: AABB): number
+		local d = aabb.max - aabb.min
+		return 2 * (d.X * d.Y + d.Y * d.Z + d.Z * d.X)
+	end
+
+	local function buildBVH(primitives: { AABB }, start: number, finish: number): BVHNode
+		if start == finish then
+			return {
+				aabb = primitives[start],
+				left = nil,
+				right = nil,
+				primitiveIndex = start
+			}
+		end
+
+		if finish - start == 1 then
+			return {
+				aabb = combineAABB(primitives[start], primitives[finish]),
+				left = buildBVH(primitives, start, start),
+				right = buildBVH(primitives, finish, finish),
+				primitiveIndex = nil
+			}
+		end
+
+		local centroid = Vector3.zero
+		for i = start, finish do
+			centroid = centroid + (primitives[i].min + primitives[i].max) * 0.5
+		end
+		centroid = centroid / (finish - start + 1)
+
+		local splitAxis = 1
+		if centroid.Y > centroid.X and centroid.Y > centroid.Z then
+			splitAxis = 2
+		elseif centroid.Z > centroid.X and centroid.Z > centroid.Y then
+			splitAxis = 3
+		end
+
+		local mid = math.floor((start + finish) / 2)
+		local function compareAABB(a: AABB, b: AABB): boolean
+			local ca = (a.min + a.max) * 0.5
+			local cb = (b.min + b.max) * 0.5
+			if splitAxis == 1 then
+				return ca.X < cb.X
+			elseif splitAxis == 2 then
+				return ca.Y < cb.Y
+			else
+				return ca.Z < cb.Z
+			end
+		end
+
+		local sorted: { AABB } = table.create(finish - start + 1) :: { AABB }
+		for i = start, finish do
+			sorted[i - start + 1] = primitives[i]
+		end
+		table.sort(sorted, compareAABB)
+
+		for i = start, finish do
+			primitives[i] = sorted[i - start + 1]
+		end
+
+		local left = buildBVH(primitives, start, mid)
+		local right = buildBVH(primitives, mid + 1, finish)
+
+		return {
+			aabb = combineAABB(left.aabb, right.aabb),
+			left = left,
+			right = right,
+			primitiveIndex = nil
+		}
+	end
+
+	return buildBVH(primitives, 1, #primitives)
+end
+
+function MathUtils.bvhRaycast(bvh: BVHNode, origin: Vector3, direction: Vector3): (boolean, number, number?)
+	if bvh == nil then
+		return false, 0, nil
+	end
+
+	local function rayAABB(aabb: AABB, origin: Vector3, direction: Vector3): (boolean, number, number?)
+		local tMin = 0
+		local tMax = math.huge
+
+		local function getComponent(v: Vector3, i: number): number
+			if i == 1 then return v.X end
+			if i == 2 then return v.Y end
+			return v.Z
+		end
+
+		for i = 1, 3 do
+			local minVal = getComponent(aabb.min, i)
+			local maxVal = getComponent(aabb.max, i)
+			local dirVal = getComponent(direction, i)
+			local originVal = getComponent(origin, i)
+
+			if math.abs(dirVal) < EPSILON then
+				if originVal < minVal or originVal > maxVal then
+					return false, 0, 0
+				end
+			else
+				local t1 = (minVal - originVal) / dirVal
+				local t2 = (maxVal - originVal) / dirVal
+
+				if t1 > t2 then
+					t1, t2 = t2, t1
+				end
+
+				tMin = math.max(tMin, t1)
+				tMax = math.min(tMax, t2)
+
+				if tMin > tMax then
+					return false, 0, 0
+				end
+			end
+		end
+
+		return true, tMin, tMax
+	end
+
+	local function traverse(node: BVHNode): (boolean, number, number?)
+		local hit, tMin, tMax = rayAABB(node.aabb, origin, direction)
+		if not hit then
+			return false, 0, nil
+		end
+
+		if node.primitiveIndex ~= nil then
+			return true, tMin, node.primitiveIndex :: number
+		end
+
+		local leftHit, leftT, leftIndex = traverse(node.left :: BVHNode)
+		local rightHit, rightT, rightIndex = traverse(node.right :: BVHNode)
+
+		if leftHit and rightHit then
+			if (leftT :: number) < (rightT :: number) then
+				return true, leftT, leftIndex :: number?
+			else
+				return true, rightT, rightIndex :: number?
+			end
+		elseif leftHit then
+			return true, leftT, leftIndex :: number?
+		elseif rightHit then
+			return true, rightT, rightIndex :: number?
+		else
+			return false, 0, nil
+		end
+	end
+
+	return traverse(bvh)
+end
+
+
+
+function MathUtils.createOctree(points: { Vector3 }, maxDepth: number, maxPointsPerNode: number): OctreeNode
+	local function build(points: { Vector3 }, center: Vector3, halfSize: Vector3, depth: number): OctreeNode
+		local node: OctreeNode = {
+			center = center,
+			halfSize = halfSize,
+			children = { nil, nil, nil, nil, nil, nil, nil, nil },
+			points = {}
+		}
+
+		if depth >= maxDepth or #points <= maxPointsPerNode then
+			node.points = points
+			return node
+		end
+
+		local octants: { { Vector3 } } = { {}, {}, {}, {}, {}, {}, {}, {} }
+		for _, point in points do
+			local index = 0
+			if point.X > center.X then index = index + 1 end
+			if point.Y > center.Y then index = index + 2 end
+			if point.Z > center.Z then index = index + 4 end
+			table.insert(octants[index + 1], point)
+		end
+
+		local childHalfSize = halfSize * 0.5
+		local offsets = {
+			Vector3.new(-1, -1, -1),
+			Vector3.new(1, -1, -1),
+			Vector3.new(-1, 1, -1),
+			Vector3.new(1, 1, -1),
+			Vector3.new(-1, -1, 1),
+			Vector3.new(1, -1, 1),
+			Vector3.new(-1, 1, 1),
+			Vector3.new(1, 1, 1)
+		}
+
+		for i = 1, 8 do
+			if #octants[i] > 0 then
+				node.children[i] = build(octants[i], center + offsets[i] * childHalfSize, childHalfSize, depth + 1)
+			end
+		end
+
+		return node
+	end
+
+	local min = points[1]
+	local max = points[1]
+	for _, p in points do
+		min = Vector3.new(math.min(min.X, p.X), math.min(min.Y, p.Y), math.min(min.Z, p.Z))
+		max = Vector3.new(math.max(max.X, p.X), math.max(max.Y, p.Y), math.max(max.Z, p.Z))
+	end
+
+	local center = (min + max) * 0.5
+	local halfSize = (max - min) * 0.5
+
+	return build(points, center, halfSize, 0)
+end
+
+function MathUtils.octreeRangeQuery(node: OctreeNode, center: Vector3, radius: number, results: { Vector3 }): { Vector3 }
+	if node == nil then
+		return results or {}
+	end
+
+	results = results or {}
+
+	local function aabbIntersectsSphere(nodeCenter: Vector3, nodeHalfSize: Vector3, sphereCenter: Vector3, sphereRadius: number): boolean
+		local closest = Vector3.new(
+			math.max(nodeCenter.X - nodeHalfSize.X, math.min(sphereCenter.X, nodeCenter.X + nodeHalfSize.X)),
+			math.max(nodeCenter.Y - nodeHalfSize.Y, math.min(sphereCenter.Y, nodeCenter.Y + nodeHalfSize.Y)),
+			math.max(nodeCenter.Z - nodeHalfSize.Z, math.min(sphereCenter.Z, nodeCenter.Z + nodeHalfSize.Z))
+		)
+		return (closest - sphereCenter).Magnitude <= sphereRadius
+	end
+
+	if not aabbIntersectsSphere(node.center, node.halfSize, center, radius) then
+		return results
+	end
+
+	if #node.points > 0 then
+		for _, point in node.points do
+			if (point - center).Magnitude <= radius then
+				table.insert(results, point)
+			end
+		end
+	else
+		for _, child in node.children do
+			if child ~= nil then
+				MathUtils.octreeRangeQuery(child, center, radius, results)
+			end
+		end
+	end
+
+	return results
+end
+
+type KDNode = { point: Vector3, left: KDNode?, right: KDNode?, axis: number }
+
+function MathUtils.createKDTree(points: { Vector3 }, depth: number): KDNode?
+	if #points == 0 then
+		return nil
+	end
+
+	if #points == 1 then
+		return {
+			point = points[1],
+			left = nil,
+			right = nil,
+			axis = depth % 3
+		}
+	end
+
+	local axis = depth % 3
+	local axisNames: { [number]: string } = { "X", "Y", "Z" }
+
+	local function comparePoints(a: Vector3, b: Vector3): boolean
+		if axis == 0 then
+			return a.X < b.X
+		elseif axis == 1 then
+			return a.Y < b.Y
+		else
+			return a.Z < b.Z
+		end
+	end
+
+	local sorted: { Vector3 } = table.create(#points) :: { Vector3 }
+	for i, p in points do
+		sorted[i] = p
+	end
+	table.sort(sorted, comparePoints)
+
+	local median = math.floor(#sorted / 2)
+	local leftPoints: { Vector3 } = table.create(median) :: { Vector3 }
+	local rightPoints: { Vector3 } = table.create(#sorted - median - 1) :: { Vector3 }
+
+	for i = 1, median do
+		leftPoints[i] = sorted[i]
+	end
+	for i = median + 2, #sorted do
+		rightPoints[i - median - 1] = sorted[i]
+	end
+
+	return {
+		point = sorted[median + 1],
+		left = MathUtils.createKDTree(leftPoints, depth + 1),
+		right = MathUtils.createKDTree(rightPoints, depth + 1),
+		axis = axis
+	}
+end
+
+function MathUtils.kdTreeNearestNeighbor(node: KDNode?, query: Vector3, depth: number, best: Vector3?, bestDist: number): (Vector3, number)
+	if node == nil then
+		return (best or Vector3.zero) :: Vector3, bestDist or math.huge
+	end
+
+	local dist = (node.point - query).Magnitude
+	if dist < bestDist then
+		best = node.point
+		bestDist = dist
+	end
+
+	local axis = depth % 3
+
+	local diff: number
+	if axis == 0 then
+		diff = query.X - node.point.X
+	elseif axis == 1 then
+		diff = query.Y - node.point.Y
+	else
+		diff = query.Z - node.point.Z
+	end
+
+	local near, far
+	if diff < 0 then
+		near = node.left
+		far = node.right
+	else
+		near = node.right
+		far = node.left
+	end
+
+	best, bestDist = MathUtils.kdTreeNearestNeighbor(near, query, depth + 1, best, bestDist)
+
+	if diff * diff < bestDist then
+		best, bestDist = MathUtils.kdTreeNearestNeighbor(far, query, depth + 1, best, bestDist)
+	end
+
+	return (best or Vector3.zero) :: Vector3, bestDist
+end
+
+type DistancePoint = { dist: number, point: Vector3 }
+
+function MathUtils.kNearestNeighbors(points: { Vector3 }, query: Vector3, k: number): { Vector3 }
+	if #points == 0 or k <= 0 then
+		return {}
+	end
+
+	k = math.min(k, #points)
+	local distances: { DistancePoint } = {}
+
+	for _, point in points do
+		local dist = (point - query).Magnitude
+		table.insert(distances, { dist = dist, point = point })
+	end
+
+	local function compare(a: DistancePoint, b: DistancePoint): boolean
+		return a.dist < b.dist
+	end
+	table.sort(distances, compare)
+
+	local result: { Vector3 } = {}
+	for i = 1, k do
+		table.insert(result, distances[i].point)
+	end
+
+	return result
+end
+
+function MathUtils.rangeQuery(points: { Vector3 }, center: Vector3, radius: number): { Vector3 }
+	local result: { Vector3 } = {}
+
+	for _, point in points do
+		if (point - center).Magnitude <= radius then
+			table.insert(result, point)	
+		end
+	end
+
+	return result
+end
+
+function MathUtils.jacobiEigenvalues3x3(
+	m11: number, m12: number, m13: number,
+	m22: number, m23: number,
+	m33: number
+): (number, number, number, Vector3, Vector3, Vector3)
+	local a = { m11, m12, m13, m12, m22, m23, m13, m23, m33 }
+	local v = { 1, 0, 0, 0, 1, 0, 0, 0, 1 }
+
+	for _ = 1, 50 do
+		local p, q = 1, 2
+		local maxVal: number = math.abs(a[2] :: number)
+		if math.abs(a[3] :: number) > maxVal then
+			p, q = 1, 3
+			maxVal = math.abs(a[3] :: number)
+		end
+		if math.abs(a[6] :: number) > maxVal then
+			p, q = 2, 3
+		end
+
+		if math.abs(a[(p - 1) * 3 + q]) < 1e-12 then
+			break
+		end
+
+		local app = a[(p - 1) * 3 + p]
+		local aqq = a[(q - 1) * 3 + q]
+		local apq = a[(p - 1) * 3 + q]
+
+		local phi = 0.5 * math.atan2(2 * apq, aqq - app)
+		local c = math.cos(phi)
+		local s = math.sin(phi)
+
+		for i = 1, 3 do
+			local ip = (i - 1) * 3 + p
+			local iq = (i - 1) * 3 + q
+			local aip = a[ip]
+			local aiq = a[iq]
+			a[ip] = c * aip - s * aiq
+			a[iq] = s * aip + c * aiq
+		end
+
+		for i = 1, 3 do
+			local pi = (p - 1) * 3 + i
+			local qi = (q - 1) * 3 + i
+			local api = a[pi]
+			local aqi = a[qi]
+			a[pi] = c * api - s * aqi
+			a[qi] = s * api + c * aqi
+		end
+
+		for i = 1, 3 do
+			local ip = (i - 1) * 3 + p
+			local iq = (i - 1) * 3 + q
+			local vip = v[ip]
+			local viq = v[iq]
+			v[ip] = c * vip - s * viq
+			v[iq] = s * vip + c * viq
+		end
+	end
+
+	local e1 = a[1]
+	local e2 = a[5]
+	local e3 = a[9]
+
+	local vec1 = Vector3.new(v[1], v[4], v[7]).Unit
+	local vec2 = Vector3.new(v[2], v[5], v[8]).Unit
+	local vec3 = Vector3.new(v[3], v[6], v[9]).Unit
+
+	return e1, e2, e3, vec1, vec2, vec3
+end
+
+function MathUtils.conservativeAdvancement(
+	shapeA: SupportFunction,
+	shapeB: SupportFunction,
+	transformA0: CFrame,
+	transformA1: CFrame,
+	transformB0: CFrame,
+	transformB1: CFrame,
+	maxIterations: number?
+): (boolean, number, Vector3)
+	local maxIter = maxIterations or 32
+	local t = 0
+
+	for _ = 1, maxIter do
+		local interpA = transformA0:Lerp(transformA1, t)
+		local interpB = transformB0:Lerp(transformB1, t)
+
+		local localA = function(direction: Vector3): Vector3
+			return interpA.Position + interpA:VectorToWorldSpace(shapeA(interpA:VectorToObjectSpace(direction)))
+		end
+		local localB = function(direction: Vector3): Vector3
+			return interpB.Position + interpB:VectorToWorldSpace(shapeB(interpB:VectorToObjectSpace(direction)))
+		end
+
+		local hit, simplex = MathUtils.gjkCollision(localA, localB)
+		if hit then
+			if #simplex >= 3 then
+				local _, normal = MathUtils.epaPenetration(localA, localB, simplex)
+				return true, t, normal
+			else
+				local normal = (interpA.Position - interpB.Position).Unit
+				if normal.Magnitude < EPSILON then
+					normal = Vector3.xAxis
+				end
+				return true, t, normal
+			end
+		end
+
+		local dist = math.huge
+		local n = #simplex
+		if n >= 3 then
+			dist = MathUtils.closestPointOnTriangle(Vector3.zero, simplex[1], simplex[2], simplex[3]).Magnitude
+		elseif n == 2 then
+			dist = MathUtils.closestPointOnSegment(Vector3.zero, simplex[1], simplex[2]).Magnitude
+		elseif n == 1 then
+			dist = simplex[1].Magnitude
+		end
+
+		local velA = (transformA1.Position - transformA0.Position).Magnitude
+		local velB = (transformB1.Position - transformB0.Position).Magnitude
+		local angularA = math.acos(math.clamp(transformA0:VectorToObjectSpace(transformA1.LookVector):Dot(Vector3.zAxis), -1, 1))
+		local angularB = math.acos(math.clamp(transformB0:VectorToObjectSpace(transformB1.LookVector):Dot(Vector3.zAxis), -1, 1))
+
+		local maxRadiusA = (localA(Vector3.xAxis) - interpA.Position).Magnitude
+		local maxRadiusB = (localB(Vector3.xAxis) - interpB.Position).Magnitude
+		local maxSpeed = velA + velB + angularA * maxRadiusA + angularB * maxRadiusB
+		maxSpeed = math.max(maxSpeed, EPSILON)
+
+		local step = dist / maxSpeed
+		if step < 1e-7 then
+			return false, t, Vector3.zero
+		end
+
+		local newT = t + step
+		if newT > 1 then
+			return false, 1, Vector3.zero
+		end
+		t = newT
+	end
+
+	return false, 1, Vector3.zero
+end
+
+type SkeletonEdge = { a: Vector2, b: Vector2 }
+
+function MathUtils.straightSkeleton2D(polygon: { Vector2 }): { SkeletonEdge }
+	local n = #polygon
+	if n < 3 then
+		return {}
+	end
+
+	local edges: { SkeletonEdge } = {}
+
+	local function polygonArea(): number
+		local area = 0
+		for i = 1, n do
+			local j = i % n + 1
+			area += polygon[i].X * polygon[j].Y - polygon[j].X * polygon[i].Y
+		end
+		return area * 0.5
+	end
+
+	if polygonArea() < 0 then
+		local rev: { Vector2 } = {}
+		for i = n, 1, -1 do
+			table.insert(rev, polygon[i])
+		end
+		polygon = rev
+	end
+
+	local function insetPolygon(poly: { Vector2 }, offset: number): { Vector2 }
+		local m = #poly
+		local result: { Vector2 } = {}
+		for i = 1, m do
+			local prev = poly[(i - 2 + m) % m + 1]
+			local curr = poly[i]
+			local next = poly[i % m + 1]
+
+			local e1 = (curr - prev).Unit
+			local e2 = (next - curr).Unit
+			local n1 = Vector2.new(-e1.Y, e1.X)
+			local n2 = Vector2.new(-e2.Y, e2.X)
+
+			local bisector = (n1 + n2).Unit
+			if bisector.Magnitude < EPSILON then
+				bisector = n1
+			end
+
+			table.insert(result, curr + bisector * offset)
+		end
+		return result
+	end
+
+	local currentPoly = polygon
+	local prevPoly = polygon
+	local maxSteps = 20
+	local totalOffset = 0
+
+	for step = 1, maxSteps do
+		local offset = 0.1
+		local inset = insetPolygon(currentPoly, offset)
+		totalOffset += offset
+
+		local insetN = #inset
+		if insetN < 3 then
+			break
+		end
+
+		local valid = true
+		for i = 1, insetN do
+			local a = inset[i]
+			local b = inset[i % insetN + 1]
+			if (b - a).Magnitude < EPSILON then
+				valid = false
+				break
+			end
+		end
+		if not valid then
+			break
+		end
+
+		for i = 1, insetN do
+			local prevIdx = i % insetN + 1
+			if prevIdx <= #prevPoly then
+				table.insert(edges, { a = prevPoly[prevIdx], b = inset[i] })
+			end
+		end
+
+		prevPoly = inset
+		currentPoly = inset
+
+		local area = 0
+		for i = 1, insetN do
+			local j = i % insetN + 1
+			area += inset[i].X * inset[j].Y - inset[j].X * inset[i].Y
+		end
+		if math.abs(area) < 0.01 then
+			break
+		end
+	end
+
+	return edges
+end
+
+type ComplexNumber = { re: number, im: number }
+
+function MathUtils.fft(signal: { ComplexNumber }): { ComplexNumber }
+	local n = #signal
+	if n <= 1 then
+		return signal
+	end
+
+	if n % 2 ~= 0 then
+		error("FFT input length must be a power of 2")
+	end
+
+	local even: { ComplexNumber } = {}
+	local odd: { ComplexNumber } = {}
+	for i = 1, n do
+		if i % 2 == 1 then
+			table.insert(even, signal[i])
+		else
+			table.insert(odd, signal[i])
+		end
+	end
+
+	local evenFFT = MathUtils.fft(even)
+	local oddFFT = MathUtils.fft(odd)
+
+	local result: { ComplexNumber } = {}
+	for _ = 1, n do
+		table.insert(result, { re = 0, im = 0 })
+	end
+	for k = 1, n / 2 do
+		local angle = -2 * math.pi * (k - 1) / n
+		local twiddle = { re = math.cos(angle), im = math.sin(angle) }
+
+		local tRe = twiddle.re * oddFFT[k].re - twiddle.im * oddFFT[k].im
+		local tIm = twiddle.re * oddFFT[k].im + twiddle.im * oddFFT[k].re
+		local t = { re = tRe, im = tIm }
+
+		result[k] = { re = evenFFT[k].re + t.re, im = evenFFT[k].im + t.im }
+		result[k + n / 2] = { re = evenFFT[k].re - t.re, im = evenFFT[k].im - t.im }
+	end
+
+	return result
+end
+
+function MathUtils.ifft(signal: { ComplexNumber }): { ComplexNumber }
+	local n = #signal
+	local conjugated: { ComplexNumber } = {}
+	for i = 1, n do
+		table.insert(conjugated, { re = signal[i].re, im = -signal[i].im })
+	end
+
+	local transformed = MathUtils.fft(conjugated)
+	local result: { ComplexNumber } = {}
+	for i = 1, n do
+		table.insert(result, { re = transformed[i].re / n, im = -transformed[i].im / n })
+	end
+
+	return result
 end
 
 return MathUtils
