@@ -1,6 +1,6 @@
 --!strict
 
-local MathUtils = {}
+local MathUtils = {} 
 
 type Plane = { normal: Vector3, d: number }
 type Contact = { depth: number? }
