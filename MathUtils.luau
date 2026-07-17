@@ -1,5 +1,4 @@
 --!strict
-
 -- by setmetatable24 (https://github.com/setmetatable24). Use it for free, open source math library from 16 years old dev!
 --NAVIGATION:
 --  QUATERNIONS & ROTATION
@@ -129,6 +128,73 @@
 --    scalarNormalizeDeadZone, scalarQuantize, scalarRoundTo, scalarApproximately, scalarBetween, scalarInverseSafe,
 --    scalarRcp, scalarRcpSqrtSafe, scalarNormalizeDegrees, scalarShortestDeltaDegrees, scalarLerpAngleDegrees,
 --    scalarDampAngleDegrees, scalarMedian3
+--  ANIMATION CURVES & TWEENING (NEW)
+--    easeInSine, easeOutSine, easeInOutSine, easeInExpo, easeOutExpo, easeInOutExpo, easeInCirc, easeOutCirc,
+--    easeInOutCirc, easeInBack, easeOutBack, easeInOutBack, easeInElastic, easeOutElastic, easeInOutElastic,
+--    easeInBounce, easeOutBounce, easeInOutBounce, easeCustomPower, easeCustomPowerInOut, easeBezierCubic,
+--    easeChain, easeReverse, easeMirror, easeBlend, easeCrossfade, easeNormalized, tweenCreate, tweenUpdate,
+--    tweenIsComplete, tweenReset, tweenSetProgress, tweenSequenceCreate, tweenSequenceUpdate, tweenVector3Create,
+--    tweenVector3Update
+--  PHYSICS SIMULATION & INTEGRATION (NEW)
+--    spring3DCreate, spring3DUpdate, spring3DSetTarget, spring3DAddImpulse, spring3DIsSettled, dualSpringCreate,
+--    dualSpringUpdate, springChainCreate, springChainUpdate, springChainGetPositions, verletSystemCreate,
+--    verletAddParticle, verletAddConstraint, verletStep, verletGetPositions, verletApplyForce, verletApplyGlobalForce,
+--    verletPin, verletUnpin, verletCreateRope, verletCreateCloth, verletConstrainSphere, verletConstrainAABB,
+--    verletConstrainPlane, rigidBody2DCreate, rigidBody2DApplyForce, rigidBody2DApplyTorque, rigidBody2DApplyImpulse,
+--    rigidBody2DStep, rigidBody2DResolveCollision, integrateEuler, integrateSemiImplicitEuler, integrateVerlet,
+--    integrateRK4, integrateLeapfrog, projectilePosition, projectileVelocity, projectileTimeToHeight,
+--    projectileMaxHeight, projectileRange, projectileAngleForRange, projectileLaunchVelocity, dragForce, liftForce,
+--    buoyancyForce, frictionForce, orbitalVelocity, orbitalPeriod, gravitationalForce, escapeVelocity
+--  PROCEDURAL MOTION & SHAKE (NEW)
+--    proceduralBob, proceduralBobVector3, proceduralBreathing, proceduralHeadBob, proceduralSway,
+--    proceduralScreenShake, proceduralTraumaDecay, proceduralLandingSquash, proceduralTiltOnVelocity,
+--    proceduralFootstepPhase, proceduralWindForce, proceduralOceanWave, proceduralGerstnerWave, proceduralMultiWave,
+--    proceduralCameraLag, proceduralLookAhead
+--  INVERSE KINEMATICS (IK) (NEW)
+--    ikFabrik, ikFabrikConstrained, ikCCD, ikTwoBone, ikLookAt, ikFootPlacement
+--  SPLINE & CURVES EXTENDED (NEW)
+--    bsplineBasis, bsplineEvaluate, bsplineDerivative, nurbsEvaluate, bezierHighOrder, bezierHighOrderDerivative,
+--    bezierSplit, bezierLength, bezierClosestPoint
+--  WAVE & OSCILLATOR GENERATION (NEW)
+--    waveSquare, waveSawtooth, waveTriangle, wavePulse, waveNoise, hashToUnit01, oscillatorSine, oscillatorDamped,
+--    oscillatorFM, oscillatorAM, oscillatorPWM, oscillatorLFO, envelopeADSR, envelopeAR, envelopeExponentialDecay
+--  ATTRACTORS & CHAOS (NEW)
+--    lorenzStep, rosslerStep, thomasStep, aizawaStep, chenStep, attractorTrail
+--  TRANSFORM UTILITIES & ADVANCED CAMERA (NEW)
+--    transformDecompose, transformCompose, transformLerpDecomposed, transformPivotRotation, transformScaleAround,
+--    transformMirror, transformConstrainToSurface, transformSmoothFollow, transformSpringFollow, cameraFirstPerson,
+--    cameraThirdPerson, cameraOrbit, cameraDollyZoom, cameraFrustumCorners, cameraScreenToWorldRay, cameraWorldToScreen,
+--    cameraDepthOfFieldCircle, cameraExposureEV
+--  ANIMATION SYSTEM & MOTION MATCHING (NEW)
+--    animationKeyframeLerp, animationKeyframeLerpV3, animationKeyframeCubic, animationBlend, animationBlendVector3,
+--    animationBlendMultiple, animationBlendMultipleV3, animationCrossfade, animationLayerAdditive,
+--    animationLayerAdditiveV3, animationTimeWarp, animationTimeScale, animationPingPong, animationLoopClamp,
+--    animationTrackCreate, animationTrackSample, motionMatchingScore, motionMatchingBestCandidate, rootMotionExtract,
+--    rootMotionApply
+--  STEERING BEHAVIORS (NEW)
+--    steeringSeek, steeringFlee, steeringArrive, steeringPursuit, steeringEvade, steeringWander,
+--    steeringObstacleAvoidance, steeringSeparation, steeringAlignment, steeringCohesion, steeringFlocking,
+--    steeringPathFollow, steeringFlowField
+--  POST-PROCESSING & COLOR GRADING (NEW)
+--    colorTemperatureToRGB, colorWhiteBalance, colorVibrance, colorSaturate, colorContrast, colorBrightness,
+--    colorGamma, colorInvert, colorGrayscale, colorSepia, colorPosterize, colorThreshold, colorQuantize,
+--    colorGradientSample
+--  FLUID DYNAMICS (2D) (NEW)
+--    fluidGridCreate, fluidAddDensity, fluidAddVelocity, fluidDiffuseStep, fluidAdvectStep, fluidStep
+--  SIGNED DISTANCE FIELDS (SDF) 3D (NEW)
+--    sdfSphere, sdfBox, sdfCylinder, sdfTorus, sdfCone, sdfRoundBox, sdfElongateX, sdfRepeat, sdfTwist, sdfBend,
+--    sdfOnion, sdfDisplace, sdfRayMarch, sdfNormal
+--  PARTICLE DYNAMICS & PROCEDURAL EFFECTS (NEW)
+--    particleEmit, particleUpdatePosition, particleLifetimeAlpha, particleSizeOverLife, particleColorOverLife,
+--    particleVortex, particleTurbulence, proceduralFireFlicker, proceduralPulse, proceduralHeartbeat,
+--    proceduralLightning, proceduralElectricArc
+--  CURVE ANALYSIS & ADVANCED MATH (NEW)
+--    curvatureAtPoint, torsionAtPoint, smoothMinPoly, smoothMaxPoly, smoothAbsPoly, smoothClampPoly, mapRange,
+--    mapRangeEased, multiLerp, multiLerpVector3, vectorSmoothDampV3, vectorSpringDampV3, exponentialSmoothV3,
+--    exponentialSmoothCFrame
+--  DUAL QUATERNIONS & ADVANCED QUATERNIONS (NEW)
+--    dualQuaternionFromPosRot, dualQuaternionToPos, dualQuaternionMultiply, dualQuaternionSlerp, quaternionExp,
+--    quaternionLog, quaternionPow, quaternionSquad, quaternionSwingTwist
 
 local MathUtils = {}
 
@@ -10785,6 +10851,5222 @@ function MathUtils.logFactorial(n: number): number
 		sum += math.log(i)
 	end
 	return sum
+end
+
+
+function MathUtils.easeInSine(t: number): number
+	local x = math.clamp(t, 0, 1)
+	return 1 - math.cos(x * math.pi * 0.5)
+end
+
+function MathUtils.easeOutSine(t: number): number
+	local x = math.clamp(t, 0, 1)
+	return math.sin(x * math.pi * 0.5)
+end
+
+function MathUtils.easeInOutSine(t: number): number
+	local x = math.clamp(t, 0, 1)
+	return -(math.cos(math.pi * x) - 1) * 0.5
+end
+
+function MathUtils.easeInExpo(t: number): number
+	local x = math.clamp(t, 0, 1)
+	if x <= 0 then return 0 end
+	return 2 ^ (10 * x - 10)
+end
+
+function MathUtils.easeOutExpo(t: number): number
+	local x = math.clamp(t, 0, 1)
+	if x >= 1 then return 1 end
+	return 1 - 2 ^ (-10 * x)
+end
+
+function MathUtils.easeInOutExpo(t: number): number
+	local x = math.clamp(t, 0, 1)
+	if x <= 0 then return 0 end
+	if x >= 1 then return 1 end
+	if x < 0.5 then
+		return 2 ^ (20 * x - 10) * 0.5
+	end
+	return (2 - 2 ^ (-20 * x + 10)) * 0.5
+end
+
+function MathUtils.easeInCirc(t: number): number
+	local x = math.clamp(t, 0, 1)
+	return 1 - math.sqrt(math.max(1 - x * x, 0))
+end
+
+function MathUtils.easeOutCirc(t: number): number
+	local x = math.clamp(t, 0, 1)
+	return math.sqrt(math.max(1 - (x - 1) * (x - 1), 0))
+end
+
+function MathUtils.easeInOutCirc(t: number): number
+	local x = math.clamp(t, 0, 1)
+	if x < 0.5 then
+		return (1 - math.sqrt(math.max(1 - (2 * x) ^ 2, 0))) * 0.5
+	end
+	return (math.sqrt(math.max(1 - (-2 * x + 2) ^ 2, 0)) + 1) * 0.5
+end
+
+function MathUtils.easeInBack(t: number, overshoot: number?): number
+	local x = math.clamp(t, 0, 1)
+	local c1 = overshoot or 1.70158
+	local c3 = c1 + 1
+	return c3 * x * x * x - c1 * x * x
+end
+
+function MathUtils.easeOutBack(t: number, overshoot: number?): number
+	local x = math.clamp(t, 0, 1)
+	local c1 = overshoot or 1.70158
+	local c3 = c1 + 1
+	return 1 + c3 * (x - 1) ^ 3 + c1 * (x - 1) ^ 2
+end
+
+function MathUtils.easeInOutBack(t: number, overshoot: number?): number
+	local x = math.clamp(t, 0, 1)
+	local c1 = overshoot or 1.70158
+	local c2 = c1 * 1.525
+	if x < 0.5 then
+		return ((2 * x) ^ 2 * ((c2 + 1) * 2 * x - c2)) * 0.5
+	end
+	return ((2 * x - 2) ^ 2 * ((c2 + 1) * (2 * x - 2) + c2) + 2) * 0.5
+end
+
+function MathUtils.easeInElastic(t: number): number
+	local x = math.clamp(t, 0, 1)
+	if x <= 0 then return 0 end
+	if x >= 1 then return 1 end
+	local c4 = TWO_PI / 3
+	return -(2 ^ (10 * x - 10)) * math.sin((x * 10 - 10.75) * c4)
+end
+
+function MathUtils.easeOutElastic(t: number): number
+	local x = math.clamp(t, 0, 1)
+	if x <= 0 then return 0 end
+	if x >= 1 then return 1 end
+	local c4 = TWO_PI / 3
+	return 2 ^ (-10 * x) * math.sin((x * 10 - 0.75) * c4) + 1
+end
+
+function MathUtils.easeInOutElastic(t: number): number
+	local x = math.clamp(t, 0, 1)
+	if x <= 0 then return 0 end
+	if x >= 1 then return 1 end
+	local c5 = TWO_PI / 4.5
+	if x < 0.5 then
+		return -(2 ^ (20 * x - 10) * math.sin((20 * x - 11.125) * c5)) * 0.5
+	end
+	return 2 ^ (-20 * x + 10) * math.sin((20 * x - 11.125) * c5) * 0.5 + 1
+end
+
+function MathUtils.easeInBounce(t: number): number
+	return 1 - MathUtils.easeOutBounce(1 - math.clamp(t, 0, 1))
+end
+
+function MathUtils.easeOutBounce(t: number): number
+	local x = math.clamp(t, 0, 1)
+	local n1 = 7.5625
+	local d1 = 2.75
+	if x < 1 / d1 then
+		return n1 * x * x
+	elseif x < 2 / d1 then
+		x -= 1.5 / d1
+		return n1 * x * x + 0.75
+	elseif x < 2.5 / d1 then
+		x -= 2.25 / d1
+		return n1 * x * x + 0.9375
+	end
+	x -= 2.625 / d1
+	return n1 * x * x + 0.984375
+end
+
+function MathUtils.easeInOutBounce(t: number): number
+	local x = math.clamp(t, 0, 1)
+	if x < 0.5 then
+		return (1 - MathUtils.easeOutBounce(1 - 2 * x)) * 0.5
+	end
+	return (1 + MathUtils.easeOutBounce(2 * x - 1)) * 0.5
+end
+
+function MathUtils.easeCustomPower(t: number, power: number): number
+	local x = math.clamp(t, 0, 1)
+	return x ^ math.max(power, EPSILON)
+end
+
+function MathUtils.easeCustomPowerInOut(t: number, power: number): number
+	local x = math.clamp(t, 0, 1)
+	local p = math.max(power, EPSILON)
+	if x < 0.5 then
+		return 0.5 * (2 * x) ^ p
+	end
+	return 1 - 0.5 * (2 - 2 * x) ^ p
+end
+
+function MathUtils.easeBezierCubic(t: number, p1: number, p2: number): number
+	local x = math.clamp(t, 0, 1)
+	local t2 = x * x
+	local t3 = t2 * x
+	return 3 * (1 - x) * (1 - x) * x * p1 + 3 * (1 - x) * t2 * p2 + t3
+end
+
+function MathUtils.easeChain(t: number, easings: {(number) -> number}): number
+	local n = #easings
+	if n == 0 then return math.clamp(t, 0, 1) end
+	local scaled = math.clamp(t, 0, 1) * n
+	local idx = math.min(math.floor(scaled), n - 1)
+	local localT = scaled - idx
+	return (idx + easings[idx + 1](localT)) / n
+end
+
+function MathUtils.easeReverse(t: number, easing: (number) -> number): number
+	return 1 - easing(1 - math.clamp(t, 0, 1))
+end
+
+function MathUtils.easeMirror(t: number, easing: (number) -> number): number
+	local x = math.clamp(t, 0, 1)
+	if x < 0.5 then
+		return easing(x * 2) * 0.5
+	end
+	return 1 - easing((1 - x) * 2) * 0.5
+end
+
+function MathUtils.easeBlend(t: number, e1: (number) -> number, e2: (number) -> number, blend: number): number
+	local x = math.clamp(t, 0, 1)
+	local b = math.clamp(blend, 0, 1)
+	return e1(x) * (1 - b) + e2(x) * b
+end
+
+function MathUtils.easeCrossfade(t: number, e1: (number) -> number, e2: (number) -> number): number
+	local x = math.clamp(t, 0, 1)
+	return e1(x) * (1 - x) + e2(x) * x
+end
+
+function MathUtils.easeNormalized(t: number, easing: (number) -> number): number
+	local x = math.clamp(t, 0, 1)
+	local start = easing(0)
+	local finish = easing(1)
+	local range = finish - start
+	if math.abs(range) < EPSILON then return 0 end
+	return (easing(x) - start) / range
+end
+
+export type TweenState = {
+	startValue: number,
+	endValue: number,
+	duration: number,
+	elapsed: number,
+	easing: (number) -> number,
+	delay: number,
+	repeatCount: number,
+	currentRepeat: number,
+	yoyo: boolean,
+	playing: boolean,
+}
+
+function MathUtils.tweenCreate(
+	startValue: number,
+	endValue: number,
+	duration: number,
+	easing: ((number) -> number)?,
+	delay: number?,
+	repeatCount: number?,
+	yoyo: boolean?
+): TweenState
+	return {
+		startValue = startValue,
+		endValue = endValue,
+		duration = math.max(duration, EPSILON),
+		elapsed = 0,
+		easing = easing or MathUtils.easeInOut3,
+		delay = delay or 0,
+		repeatCount = repeatCount or 0,
+		currentRepeat = 0,
+		yoyo = yoyo or false,
+		playing = true,
+	}
+end
+
+function MathUtils.tweenUpdate(state: TweenState, dt: number): number
+	if not state.playing then
+		return state.endValue
+	end
+	state.elapsed += dt
+	local effectiveTime = state.elapsed - state.delay
+	if effectiveTime < 0 then
+		return state.startValue
+	end
+	local progress = math.clamp(effectiveTime / state.duration, 0, 1)
+	local easedProgress = state.easing(progress)
+	local currentStart = state.startValue
+	local currentEnd = state.endValue
+	if state.yoyo and state.currentRepeat % 2 == 1 then
+		currentStart = state.endValue
+		currentEnd = state.startValue
+	end
+	local value = currentStart + (currentEnd - currentStart) * easedProgress
+	if progress >= 1 then
+		if state.repeatCount < 0 or state.currentRepeat < state.repeatCount then
+			state.currentRepeat += 1
+			state.elapsed = state.delay
+		else
+			state.playing = false
+		end
+	end
+	return value
+end
+
+function MathUtils.tweenIsComplete(state: TweenState): boolean
+	return not state.playing
+end
+
+function MathUtils.tweenReset(state: TweenState)
+	state.elapsed = 0
+	state.currentRepeat = 0
+	state.playing = true
+end
+
+function MathUtils.tweenSetProgress(state: TweenState, progress: number)
+	state.elapsed = state.delay + math.clamp(progress, 0, 1) * state.duration
+end
+
+export type TweenSequenceEntry = {
+	startValue: number,
+	endValue: number,
+	duration: number,
+	easing: (number) -> number,
+	delay: number,
+}
+
+export type TweenSequenceState = {
+	entries: {TweenSequenceEntry},
+	currentIndex: number,
+	elapsed: number,
+	playing: boolean,
+	looping: boolean,
+}
+
+function MathUtils.tweenSequenceCreate(entries: {TweenSequenceEntry}, looping: boolean?): TweenSequenceState
+	return {
+		entries = entries,
+		currentIndex = 1,
+		elapsed = 0,
+		playing = true,
+		looping = looping or false,
+	}
+end
+
+function MathUtils.tweenSequenceUpdate(state: TweenSequenceState, dt: number): number
+	if not state.playing or #state.entries == 0 then
+		if #state.entries > 0 then
+			return state.entries[#state.entries].endValue
+		end
+		return 0
+	end
+	state.elapsed += dt
+	local entry = state.entries[state.currentIndex]
+	local effectiveTime = state.elapsed - entry.delay
+	if effectiveTime < 0 then
+		return entry.startValue
+	end
+	local progress = math.clamp(effectiveTime / math.max(entry.duration, EPSILON), 0, 1)
+	local easedProgress = entry.easing(progress)
+	local value = entry.startValue + (entry.endValue - entry.startValue) * easedProgress
+	if progress >= 1 then
+		if state.currentIndex < #state.entries then
+			state.currentIndex += 1
+			state.elapsed = 0
+		elseif state.looping then
+			state.currentIndex = 1
+			state.elapsed = 0
+		else
+			state.playing = false
+		end
+	end
+	return value
+end
+
+export type TweenVector3State = {
+	startValue: Vector3,
+	endValue: Vector3,
+	duration: number,
+	elapsed: number,
+	easing: (number) -> number,
+	delay: number,
+	playing: boolean,
+}
+
+function MathUtils.tweenVector3Create(
+	startValue: Vector3,
+	endValue: Vector3,
+	duration: number,
+	easing: ((number) -> number)?
+): TweenVector3State
+	return {
+		startValue = startValue,
+		endValue = endValue,
+		duration = math.max(duration, EPSILON),
+		elapsed = 0,
+		easing = easing or MathUtils.easeInOut3,
+		delay = 0,
+		playing = true,
+	}
+end
+
+function MathUtils.tweenVector3Update(state: TweenVector3State, dt: number): Vector3
+	if not state.playing then
+		return state.endValue
+	end
+	state.elapsed += dt
+	local effectiveTime = state.elapsed - state.delay
+	if effectiveTime < 0 then
+		return state.startValue
+	end
+	local progress = math.clamp(effectiveTime / state.duration, 0, 1)
+	local easedProgress = state.easing(progress)
+	local value = state.startValue:Lerp(state.endValue, easedProgress)
+	if progress >= 1 then
+		state.playing = false
+	end
+	return value
+end
+
+export type SpringState3D = {
+	position: Vector3,
+	velocity: Vector3,
+	target: Vector3,
+	stiffness: number,
+	damping: number,
+}
+
+function MathUtils.spring3DCreate(
+	position: Vector3,
+	target: Vector3,
+	stiffness: number,
+	damping: number
+): SpringState3D
+	return {
+		position = position,
+		velocity = Vector3.zero,
+		target = target,
+		stiffness = math.max(stiffness, 0),
+		damping = math.max(damping, 0),
+	}
+end
+
+function MathUtils.spring3DUpdate(state: SpringState3D, dt: number): Vector3
+	local safeDt = math.max(dt, 0)
+	if safeDt <= 0 then return state.position end
+	local displacement = state.position - state.target
+	local springForce = displacement * (-state.stiffness)
+	local dampingForce = state.velocity * (-state.damping)
+	local acceleration = springForce + dampingForce
+	state.velocity = state.velocity + acceleration * safeDt
+	state.position = state.position + state.velocity * safeDt
+	return state.position
+end
+
+function MathUtils.spring3DSetTarget(state: SpringState3D, target: Vector3)
+	state.target = target
+end
+
+function MathUtils.spring3DAddImpulse(state: SpringState3D, impulse: Vector3)
+	state.velocity = state.velocity + impulse
+end
+
+function MathUtils.spring3DIsSettled(state: SpringState3D, posThreshold: number?, velThreshold: number?): boolean
+	local posEps = posThreshold or 0.01
+	local velEps = velThreshold or 0.01
+	return (state.position - state.target).Magnitude < posEps and state.velocity.Magnitude < velEps
+end
+
+export type DualSpringState = {
+	positionSpring: SpringState3D,
+	rotationSpring: SpringState3D,
+}
+
+function MathUtils.dualSpringCreate(
+	position: Vector3,
+	posTarget: Vector3,
+	rotation: Vector3,
+	rotTarget: Vector3,
+	stiffness: number,
+	damping: number
+): DualSpringState
+	return {
+		positionSpring = MathUtils.spring3DCreate(position, posTarget, stiffness, damping),
+		rotationSpring = MathUtils.spring3DCreate(rotation, rotTarget, stiffness * 0.5, damping * 1.2),
+	}
+end
+
+function MathUtils.dualSpringUpdate(state: DualSpringState, dt: number): (Vector3, Vector3)
+	local pos = MathUtils.spring3DUpdate(state.positionSpring, dt)
+	local rot = MathUtils.spring3DUpdate(state.rotationSpring, dt)
+	return pos, rot
+end
+
+export type SpringChainNode = {
+	position: Vector3,
+	velocity: Vector3,
+	restLength: number,
+}
+
+function MathUtils.springChainCreate(
+	positions: {Vector3},
+	stiffness: number,
+	damping: number,
+	restLengths: {number}?
+): {SpringChainNode}
+	local chain: {SpringChainNode} = {}
+	for i = 1, #positions do
+		local restLen = 0
+		if restLengths and restLengths[i] then
+			restLen = restLengths[i]
+		elseif i > 1 then
+			restLen = (positions[i] - positions[i - 1]).Magnitude
+		end
+		chain[i] = {
+			position = positions[i],
+			velocity = Vector3.zero,
+			restLength = restLen,
+		}
+	end
+	return chain
+end
+
+function MathUtils.springChainUpdate(
+	chain: {SpringChainNode},
+	anchorPosition: Vector3,
+	stiffness: number,
+	damping: number,
+	gravity: Vector3,
+	dt: number
+)
+	local safeDt = math.max(dt, 0)
+	if safeDt <= 0 then return end
+	chain[1].position = anchorPosition
+	chain[1].velocity = Vector3.zero
+	for i = 2, #chain do
+		local node = chain[i]
+		local prev = chain[i - 1]
+		local direction = node.position - prev.position
+		local distance = direction.Magnitude
+		local unitDir = if distance > EPSILON then direction / distance else Vector3.yAxis
+		local stretch = distance - node.restLength
+		local springForce = unitDir * (-stiffness * stretch)
+		local dampingForce = node.velocity * (-damping)
+		local totalForce = springForce + dampingForce + gravity
+		node.velocity = node.velocity + totalForce * safeDt
+		node.position = node.position + node.velocity * safeDt
+	end
+end
+
+function MathUtils.springChainGetPositions(chain: {SpringChainNode}): {Vector3}
+	local positions: {Vector3} = {}
+	for i = 1, #chain do
+		positions[i] = chain[i].position
+	end
+	return positions
+end
+
+export type VerletParticle = {
+	position: Vector3,
+	previousPosition: Vector3,
+	acceleration: Vector3,
+	pinned: boolean,
+	mass: number,
+}
+
+export type VerletConstraint = {
+	p1: number,
+	p2: number,
+	restLength: number,
+	stiffness: number,
+}
+
+export type VerletSystem = {
+	particles: {VerletParticle},
+	constraints: {VerletConstraint},
+	gravity: Vector3,
+	damping: number,
+}
+
+function MathUtils.verletSystemCreate(gravity: Vector3?, damping: number?): VerletSystem
+	return {
+		particles = {},
+		constraints = {},
+		gravity = gravity or Vector3.new(0, -9.81, 0),
+		damping = damping or 0.99,
+	}
+end
+
+function MathUtils.verletAddParticle(
+	system: VerletSystem,
+	position: Vector3,
+	pinned: boolean?,
+	mass: number?
+): number
+	local particle: VerletParticle = {
+		position = position,
+		previousPosition = position,
+		acceleration = Vector3.zero,
+		pinned = pinned or false,
+		mass = mass or 1,
+	}
+	table.insert(system.particles, particle)
+	return #system.particles
+end
+
+function MathUtils.verletAddConstraint(
+	system: VerletSystem,
+	p1Index: number,
+	p2Index: number,
+	stiffness: number?,
+	restLength: number?
+): number
+	local particle1 = system.particles[p1Index]
+	local particle2 = system.particles[p2Index]
+	local rest = restLength or (particle1.position - particle2.position).Magnitude
+	local constraint: VerletConstraint = {
+		p1 = p1Index,
+		p2 = p2Index,
+		restLength = rest,
+		stiffness = stiffness or 1,
+	}
+	table.insert(system.constraints, constraint)
+	return #system.constraints
+end
+
+function MathUtils.verletStep(system: VerletSystem, dt: number, iterations: number?)
+	local safeDt = math.max(dt, 0)
+	if safeDt <= 0 then return end
+	local iters = iterations or 3
+	for _, particle in ipairs(system.particles) do
+		if not particle.pinned then
+			local velocity = (particle.position - particle.previousPosition) * system.damping
+			particle.previousPosition = particle.position
+			particle.acceleration = system.gravity * (1 / math.max(particle.mass, EPSILON))
+			particle.position = particle.position + velocity + particle.acceleration * (safeDt * safeDt)
+		end
+	end
+	for _ = 1, iters do
+		for _, constraint in ipairs(system.constraints) do
+			local p1 = system.particles[constraint.p1]
+			local p2 = system.particles[constraint.p2]
+			local delta = p2.position - p1.position
+			local distance = delta.Magnitude
+			if distance < EPSILON then continue end
+			local diff = (constraint.restLength - distance) / distance
+			local correction = delta * (diff * 0.5 * constraint.stiffness)
+			if not p1.pinned and not p2.pinned then
+				local totalMass = p1.mass + p2.mass
+				local ratio1 = p2.mass / totalMass
+				local ratio2 = p1.mass / totalMass
+				p1.position = p1.position - correction * ratio1
+				p2.position = p2.position + correction * ratio2
+			elseif not p1.pinned then
+				p1.position = p1.position - correction * 2
+			elseif not p2.pinned then
+				p2.position = p2.position + correction * 2
+			end
+		end
+	end
+end
+
+function MathUtils.verletGetPositions(system: VerletSystem): {Vector3}
+	local positions: {Vector3} = {}
+	for i, particle in ipairs(system.particles) do
+		positions[i] = particle.position
+	end
+	return positions
+end
+
+function MathUtils.verletApplyForce(system: VerletSystem, particleIndex: number, force: Vector3)
+	local particle = system.particles[particleIndex]
+	if particle and not particle.pinned then
+		particle.position = particle.position + force
+	end
+end
+
+function MathUtils.verletApplyGlobalForce(system: VerletSystem, force: Vector3)
+	for _, particle in ipairs(system.particles) do
+		if not particle.pinned then
+			particle.position = particle.position + force
+		end
+	end
+end
+
+function MathUtils.verletPin(system: VerletSystem, particleIndex: number, position: Vector3?)
+	local particle = system.particles[particleIndex]
+	if particle then
+		particle.pinned = true
+		if position then
+			particle.position = position
+			particle.previousPosition = position
+		end
+	end
+end
+
+function MathUtils.verletUnpin(system: VerletSystem, particleIndex: number)
+	local particle = system.particles[particleIndex]
+	if particle then
+		particle.pinned = false
+	end
+end
+
+function MathUtils.verletCreateRope(
+	system: VerletSystem,
+	startPos: Vector3,
+	endPos: Vector3,
+	segments: number,
+	stiffness: number?,
+	pinStart: boolean?,
+	pinEnd: boolean?
+): {number}
+	local indices: {number} = {}
+	for i = 0, segments do
+		local t = i / segments
+		local pos = startPos:Lerp(endPos, t)
+		local pinned = false
+		if i == 0 and (pinStart == nil or pinStart) then pinned = true end
+		if i == segments and (pinEnd == nil or pinEnd) then pinned = true end
+		local idx = MathUtils.verletAddParticle(system, pos, pinned)
+		table.insert(indices, idx)
+	end
+	for i = 1, #indices - 1 do
+		MathUtils.verletAddConstraint(system, indices[i], indices[i + 1], stiffness)
+	end
+	return indices
+end
+
+function MathUtils.verletCreateCloth(
+	system: VerletSystem,
+	origin: Vector3,
+	width: number,
+	height: number,
+	resX: number,
+	resY: number,
+	stiffness: number?,
+	pinTop: boolean?
+): {{number}}
+	local grid: {{number}} = {}
+	for y = 0, resY do
+		grid[y + 1] = {}
+		for x = 0, resX do
+			local pos = origin + Vector3.new(x * (width / resX), -y * (height / resY), 0)
+			local pinned = false
+			if (pinTop == nil or pinTop) and y == 0 then
+				pinned = true
+			end
+			local idx = MathUtils.verletAddParticle(system, pos, pinned)
+			grid[y + 1][x + 1] = idx
+		end
+	end
+	for y = 1, resY + 1 do
+		for x = 1, resX + 1 do
+			if x < resX + 1 then
+				MathUtils.verletAddConstraint(system, grid[y][x], grid[y][x + 1], stiffness)
+			end
+			if y < resY + 1 then
+				MathUtils.verletAddConstraint(system, grid[y][x], grid[y + 1][x], stiffness)
+			end
+		end
+	end
+	return grid
+end
+
+function MathUtils.verletConstrainSphere(
+	system: VerletSystem,
+	center: Vector3,
+	radius: number
+)
+	for _, particle in ipairs(system.particles) do
+		if not particle.pinned then
+			local delta = particle.position - center
+			local dist = delta.Magnitude
+			if dist < radius and dist > EPSILON then
+				particle.position = center + delta / dist * radius
+			end
+		end
+	end
+end
+
+function MathUtils.verletConstrainAABB(
+	system: VerletSystem,
+	minBound: Vector3,
+	maxBound: Vector3,
+	bounce: number?
+)
+	local b = bounce or 0
+	for _, particle in ipairs(system.particles) do
+		if not particle.pinned then
+			local pos = particle.position
+			local prev = particle.previousPosition
+			local newX, newY, newZ = pos.X, pos.Y, pos.Z
+			local prevX, prevY, prevZ = prev.X, prev.Y, prev.Z
+			if newX < minBound.X then
+				newX = minBound.X
+				prevX = minBound.X + (minBound.X - prevX) * b
+			elseif newX > maxBound.X then
+				newX = maxBound.X
+				prevX = maxBound.X + (maxBound.X - prevX) * b
+			end
+			if newY < minBound.Y then
+				newY = minBound.Y
+				prevY = minBound.Y + (minBound.Y - prevY) * b
+			elseif newY > maxBound.Y then
+				newY = maxBound.Y
+				prevY = maxBound.Y + (maxBound.Y - prevY) * b
+			end
+			if newZ < minBound.Z then
+				newZ = minBound.Z
+				prevZ = minBound.Z + (minBound.Z - prevZ) * b
+			elseif newZ > maxBound.Z then
+				newZ = maxBound.Z
+				prevZ = maxBound.Z + (maxBound.Z - prevZ) * b
+			end
+			particle.position = Vector3.new(newX, newY, newZ)
+			particle.previousPosition = Vector3.new(prevX, prevY, prevZ)
+		end
+	end
+end
+
+function MathUtils.verletConstrainPlane(
+	system: VerletSystem,
+	planePoint: Vector3,
+	planeNormal: Vector3
+)
+	local normal = if planeNormal.Magnitude > EPSILON then planeNormal.Unit else Vector3.yAxis
+	for _, particle in ipairs(system.particles) do
+		if not particle.pinned then
+			local d = (particle.position - planePoint):Dot(normal)
+			if d < 0 then
+				particle.position = particle.position - normal * d
+			end
+		end
+	end
+end
+
+export type RigidBody2D = {
+	position: Vector2,
+	velocity: Vector2,
+	angle: number,
+	angularVelocity: number,
+	mass: number,
+	inertia: number,
+	restitution: number,
+	friction: number,
+	isStatic: boolean,
+}
+
+function MathUtils.rigidBody2DCreate(
+	position: Vector2,
+	mass: number?,
+	inertia: number?,
+	restitution: number?,
+	friction: number?,
+	isStatic: boolean?
+): RigidBody2D
+	return {
+		position = position,
+		velocity = Vector2.zero,
+		angle = 0,
+		angularVelocity = 0,
+		mass = mass or 1,
+		inertia = inertia or 1,
+		restitution = restitution or 0.3,
+		friction = friction or 0.5,
+		isStatic = isStatic or false,
+	}
+end
+
+function MathUtils.rigidBody2DApplyForce(body: RigidBody2D, force: Vector2, dt: number)
+	if body.isStatic then return end
+	local acceleration = force / body.mass
+	body.velocity = body.velocity + acceleration * dt
+end
+
+function MathUtils.rigidBody2DApplyTorque(body: RigidBody2D, torque: number, dt: number)
+	if body.isStatic then return end
+	body.angularVelocity += torque / body.inertia * dt
+end
+
+function MathUtils.rigidBody2DApplyImpulse(body: RigidBody2D, impulse: Vector2, contactOffset: Vector2?)
+	if body.isStatic then return end
+	body.velocity = body.velocity + impulse / body.mass
+	if contactOffset then
+		local angularImpulse = contactOffset.X * impulse.Y - contactOffset.Y * impulse.X
+		body.angularVelocity += angularImpulse / body.inertia
+	end
+end
+
+function MathUtils.rigidBody2DStep(body: RigidBody2D, dt: number, gravity: Vector2?, linearDamping: number?, angularDamping: number?)
+	if body.isStatic then return end
+	local safeDt = math.max(dt, 0)
+	if safeDt <= 0 then return end
+	if gravity then
+		body.velocity = body.velocity + gravity * safeDt
+	end
+	local ld = linearDamping or 0.01
+	local ad = angularDamping or 0.01
+	body.velocity = body.velocity * math.max(1 - ld * safeDt, 0)
+	body.angularVelocity = body.angularVelocity * math.max(1 - ad * safeDt, 0)
+	body.position = body.position + body.velocity * safeDt
+	body.angle = body.angle + body.angularVelocity * safeDt
+end
+
+function MathUtils.rigidBody2DResolveCollision(
+	bodyA: RigidBody2D,
+	bodyB: RigidBody2D,
+	contactNormal: Vector2,
+	penetration: number
+)
+	local normal = if contactNormal.Magnitude > EPSILON then contactNormal.Unit else Vector2.new(0, 1)
+	local relativeVelocity = bodyA.velocity - bodyB.velocity
+	local velAlongNormal = relativeVelocity:Dot(normal)
+	if velAlongNormal > 0 then return end
+	local e = math.min(bodyA.restitution, bodyB.restitution)
+	local invMassA = if bodyA.isStatic then 0 else 1 / bodyA.mass
+	local invMassB = if bodyB.isStatic then 0 else 1 / bodyB.mass
+	local totalInvMass = invMassA + invMassB
+	if totalInvMass < EPSILON then return end
+	local j = -(1 + e) * velAlongNormal / totalInvMass
+	local impulse = normal * j
+	if not bodyA.isStatic then
+		bodyA.velocity = bodyA.velocity + impulse * invMassA
+	end
+	if not bodyB.isStatic then
+		bodyB.velocity = bodyB.velocity - impulse * invMassB
+	end
+	local correction = normal * (math.max(penetration - 0.01, 0) / totalInvMass * 0.8)
+	if not bodyA.isStatic then
+		bodyA.position = bodyA.position + correction * invMassA
+	end
+	if not bodyB.isStatic then
+		bodyB.position = bodyB.position - correction * invMassB
+	end
+end
+
+function MathUtils.integrateEuler(
+	position: Vector3,
+	velocity: Vector3,
+	acceleration: Vector3,
+	dt: number
+): (Vector3, Vector3)
+	local safeDt = math.max(dt, 0)
+	local newVelocity = velocity + acceleration * safeDt
+	local newPosition = position + newVelocity * safeDt
+	return newPosition, newVelocity
+end
+
+function MathUtils.integrateSemiImplicitEuler(
+	position: Vector3,
+	velocity: Vector3,
+	acceleration: Vector3,
+	dt: number
+): (Vector3, Vector3)
+	local safeDt = math.max(dt, 0)
+	local newVelocity = velocity + acceleration * safeDt
+	local newPosition = position + newVelocity * safeDt
+	return newPosition, newVelocity
+end
+
+function MathUtils.integrateVerlet(
+	position: Vector3,
+	previousPosition: Vector3,
+	acceleration: Vector3,
+	dt: number
+): (Vector3, Vector3)
+	local safeDt = math.max(dt, 0)
+	local newPosition = position * 2 - previousPosition + acceleration * (safeDt * safeDt)
+	return newPosition, position
+end
+
+function MathUtils.integrateRK4(
+	position: Vector3,
+	velocity: Vector3,
+	accelerationFn: (Vector3, Vector3, number) -> Vector3,
+	t: number,
+	dt: number
+): (Vector3, Vector3)
+	local safeDt = math.max(dt, 0)
+	local k1v = accelerationFn(position, velocity, t) * safeDt
+	local k1x = velocity * safeDt
+	local k2v = accelerationFn(position + k1x * 0.5, velocity + k1v * 0.5, t + safeDt * 0.5) * safeDt
+	local k2x = (velocity + k1v * 0.5) * safeDt
+	local k3v = accelerationFn(position + k2x * 0.5, velocity + k2v * 0.5, t + safeDt * 0.5) * safeDt
+	local k3x = (velocity + k2v * 0.5) * safeDt
+	local k4v = accelerationFn(position + k3x, velocity + k3v, t + safeDt) * safeDt
+	local k4x = (velocity + k3v) * safeDt
+	local newPosition = position + (k1x + k2x * 2 + k3x * 2 + k4x) / 6
+	local newVelocity = velocity + (k1v + k2v * 2 + k3v * 2 + k4v) / 6
+	return newPosition, newVelocity
+end
+
+function MathUtils.integrateLeapfrog(
+	position: Vector3,
+	velocity: Vector3,
+	accelerationFn: (Vector3) -> Vector3,
+	dt: number
+): (Vector3, Vector3)
+	local safeDt = math.max(dt, 0)
+	local halfVelocity = velocity + accelerationFn(position) * (safeDt * 0.5)
+	local newPosition = position + halfVelocity * safeDt
+	local newVelocity = halfVelocity + accelerationFn(newPosition) * (safeDt * 0.5)
+	return newPosition, newVelocity
+end
+
+function MathUtils.projectilePosition(
+	origin: Vector3,
+	velocity: Vector3,
+	gravity: number,
+	t: number
+): Vector3
+	return origin + velocity * t + Vector3.new(0, -0.5 * gravity * t * t, 0)
+end
+
+function MathUtils.projectileVelocity(
+	velocity: Vector3,
+	gravity: number,
+	t: number
+): Vector3
+	return velocity + Vector3.new(0, -gravity * t, 0)
+end
+
+function MathUtils.projectileTimeToHeight(
+	vy: number,
+	gravity: number,
+	targetHeight: number
+): (number?, number?)
+	local a = -0.5 * gravity
+	local b = vy
+	local c = -targetHeight
+	local disc = b * b - 4 * a * c
+	if disc < 0 then return nil, nil end
+	if math.abs(a) < EPSILON then
+		if math.abs(b) < EPSILON then return nil, nil end
+		local t = -c / b
+		return t, t
+	end
+	local sqrtDisc = math.sqrt(disc)
+	local t1 = (-b + sqrtDisc) / (2 * a)
+	local t2 = (-b - sqrtDisc) / (2 * a)
+	if t1 > t2 then
+		return t2, t1
+	end
+	return t1, t2
+end
+
+function MathUtils.projectileMaxHeight(vy: number, gravity: number): number
+	if gravity <= 0 then return math.huge end
+	return vy * vy / (2 * gravity)
+end
+
+function MathUtils.projectileRange(speed: number, angle: number, gravity: number, startHeight: number?): number
+	local h = startHeight or 0
+	local vx = speed * math.cos(angle)
+	local vy = speed * math.sin(angle)
+	if gravity <= 0 then return math.huge end
+	local disc = vy * vy + 2 * gravity * h
+	if disc < 0 then return 0 end
+	local t = (vy + math.sqrt(disc)) / gravity
+	return vx * t
+end
+
+function MathUtils.projectileAngleForRange(
+	speed: number,
+	gravity: number,
+	range: number
+): (number?, number?)
+	if speed <= 0 or gravity <= 0 then return nil, nil end
+	local sinVal = range * gravity / (speed * speed)
+	if math.abs(sinVal) > 1 then return nil, nil end
+	local angle1 = math.asin(sinVal) * 0.5
+	local angle2 = math.pi * 0.5 - angle1
+	return angle1, angle2
+end
+
+function MathUtils.projectileLaunchVelocity(
+	origin: Vector3,
+	target: Vector3,
+	gravity: number,
+	timeOfFlight: number
+): Vector3?
+	if timeOfFlight <= 0 or gravity <= 0 then return nil end
+	local dx = target.X - origin.X
+	local dy = target.Y - origin.Y
+	local dz = target.Z - origin.Z
+	local vx = dx / timeOfFlight
+	local vz = dz / timeOfFlight
+	local vy = dy / timeOfFlight + 0.5 * gravity * timeOfFlight
+	return Vector3.new(vx, vy, vz)
+end
+
+function MathUtils.dragForce(velocity: Vector3, dragCoeff: number, area: number?, airDensity: number?): Vector3
+	local speed = velocity.Magnitude
+	if speed < EPSILON then return Vector3.zero end
+	local cd = dragCoeff
+	local a = area or 1
+	local rho = airDensity or 1.225
+	local forceMag = 0.5 * rho * cd * a * speed * speed
+	return -velocity / speed * forceMag
+end
+
+function MathUtils.liftForce(velocity: Vector3, liftNormal: Vector3, liftCoeff: number, area: number?, airDensity: number?): Vector3
+	local speed = velocity.Magnitude
+	if speed < EPSILON then return Vector3.zero end
+	local cl = liftCoeff
+	local a = area or 1
+	local rho = airDensity or 1.225
+	local forceMag = 0.5 * rho * cl * a * speed * speed
+	local liftDir = if liftNormal.Magnitude > EPSILON then liftNormal.Unit else Vector3.yAxis
+	return liftDir * forceMag
+end
+
+function MathUtils.buoyancyForce(
+	submergedVolume: number,
+	fluidDensity: number,
+	gravity: number
+): Vector3
+	return Vector3.new(0, submergedVolume * fluidDensity * gravity, 0)
+end
+
+function MathUtils.frictionForce(
+	normalForce: number,
+	velocity: Vector3,
+	staticCoeff: number,
+	kineticCoeff: number
+): Vector3
+	local speed = velocity.Magnitude
+	if speed < EPSILON then
+		return Vector3.zero
+	end
+	local coeff = if speed < 0.01 then staticCoeff else kineticCoeff
+	local forceMag = normalForce * coeff
+	return -velocity / speed * forceMag
+end
+
+function MathUtils.orbitalVelocity(centerMass: number, radius: number, G: number?): number
+	local grav = G or 6.674e-11
+	if radius <= 0 then return 0 end
+	return math.sqrt(grav * centerMass / radius)
+end
+
+function MathUtils.orbitalPeriod(centerMass: number, radius: number, G: number?): number
+	local grav = G or 6.674e-11
+	if radius <= 0 or centerMass <= 0 then return 0 end
+	return TWO_PI * math.sqrt(radius ^ 3 / (grav * centerMass))
+end
+
+function MathUtils.gravitationalForce(m1: number, m2: number, distance: number, G: number?): number
+	local grav = G or 6.674e-11
+	if distance <= EPSILON then return 0 end
+	return grav * m1 * m2 / (distance * distance)
+end
+
+function MathUtils.escapeVelocity(mass: number, radius: number, G: number?): number
+	local grav = G or 6.674e-11
+	if radius <= 0 then return 0 end
+	return math.sqrt(2 * grav * mass / radius)
+end
+
+function MathUtils.proceduralBob(t: number, amplitude: number, frequency: number, phase: number?): number
+	local p = phase or 0
+	return amplitude * math.sin(TWO_PI * frequency * t + p)
+end
+
+function MathUtils.proceduralBobVector3(t: number, amplitudes: Vector3, frequencies: Vector3, phases: Vector3?): Vector3
+	local p = phases or Vector3.zero
+	return Vector3.new(
+		amplitudes.X * math.sin(TWO_PI * frequencies.X * t + p.X),
+		amplitudes.Y * math.sin(TWO_PI * frequencies.Y * t + p.Y),
+		amplitudes.Z * math.sin(TWO_PI * frequencies.Z * t + p.Z)
+	)
+end
+
+function MathUtils.proceduralBreathing(t: number, amplitude: number, rate: number): number
+	local cycle = math.sin(TWO_PI * rate * t * 0.5)
+	return amplitude * cycle * cycle
+end
+
+function MathUtils.proceduralHeadBob(
+	t: number,
+	walkSpeed: number,
+	verticalAmplitude: number,
+	horizontalAmplitude: number,
+	bobFrequency: number
+): Vector3
+	local freq = bobFrequency * walkSpeed
+	local vertical = math.abs(math.sin(TWO_PI * freq * t)) * verticalAmplitude
+	local horizontal = math.sin(TWO_PI * freq * t * 0.5) * horizontalAmplitude
+	return Vector3.new(horizontal, vertical, 0)
+end
+
+function MathUtils.proceduralSway(t: number, amplitude: number, frequency: number, seed: number?): number
+	local s = seed or 0
+	local primary = math.sin(TWO_PI * frequency * t + s)
+	local secondary = math.sin(TWO_PI * frequency * 0.7 * t + s * 1.3) * 0.3
+	local tertiary = math.sin(TWO_PI * frequency * 1.3 * t + s * 0.7) * 0.15
+	return amplitude * (primary + secondary + tertiary) / 1.45
+end
+
+function MathUtils.proceduralScreenShake(
+	t: number,
+	trauma: number,
+	frequency: number?,
+	maxAngle: number?,
+	maxOffset: number?
+): (Vector2, number)
+	local freq = frequency or 20
+	local maxA = maxAngle or 5
+	local maxO = maxOffset or 10
+	local shake = trauma * trauma
+	local angle = maxA * shake * math.sin(freq * t * 1.1)
+	local offsetX = maxO * shake * math.sin(freq * t * 0.9)
+	local offsetY = maxO * shake * math.sin(freq * t * 1.3)
+	return Vector2.new(offsetX, offsetY), angle
+end
+
+function MathUtils.proceduralTraumaDecay(trauma: number, decayRate: number, dt: number): number
+	return math.max(trauma - decayRate * dt, 0)
+end
+
+function MathUtils.proceduralLandingSquash(
+	t: number,
+	impactVelocity: number,
+	duration: number?,
+	maxSquash: number?
+): Vector3
+	local dur = duration or 0.3
+	local maxS = maxSquash or 0.3
+	local progress = math.clamp(t / dur, 0, 1)
+	local impact = math.clamp(math.abs(impactVelocity) / 50, 0, 1)
+	local squashAmount = maxS * impact
+	local bouncePhase = math.sin(progress * math.pi * 3) * math.exp(-progress * 5)
+	local sx = 1 + squashAmount * bouncePhase * 0.5
+	local sy = 1 - squashAmount * bouncePhase
+	local sz = 1 + squashAmount * bouncePhase * 0.5
+	return Vector3.new(sx, sy, sz)
+end
+
+function MathUtils.proceduralTiltOnVelocity(
+	velocity: Vector3,
+	maxTiltAngle: number,
+	smoothing: number?,
+	currentTilt: Vector3?,
+	dt: number?
+): Vector3
+	local maxT = math.rad(maxTiltAngle)
+	local speed = velocity.Magnitude
+	if speed < EPSILON then
+		if currentTilt and dt then
+			local s = smoothing or 5
+			local alpha = 1 - math.exp(-s * math.max(dt, 0))
+			return currentTilt:Lerp(Vector3.zero, alpha)
+		end
+		return Vector3.zero
+	end
+	local dir = velocity / speed
+	local normalizedSpeed = math.clamp(speed / 50, 0, 1)
+	local tiltX = -dir.Z * maxT * normalizedSpeed
+	local tiltZ = dir.X * maxT * normalizedSpeed
+	local targetTilt = Vector3.new(tiltX, 0, tiltZ)
+	if currentTilt and dt then
+		local s = smoothing or 5
+		local alpha = 1 - math.exp(-s * math.max(dt, 0))
+		return currentTilt:Lerp(targetTilt, alpha)
+	end
+	return targetTilt
+end
+
+function MathUtils.proceduralFootstepPhase(distance: number, strideLength: number): (number, boolean)
+	local phase = (distance / math.max(strideLength, EPSILON)) % 1
+	local leftFoot = phase < 0.5
+	return phase, leftFoot
+end
+
+function MathUtils.proceduralWindForce(
+	t: number,
+	baseStrength: number,
+	gustStrength: number,
+	gustFrequency: number,
+	direction: Vector3
+): Vector3
+	local dir = if direction.Magnitude > EPSILON then direction.Unit else Vector3.new(1, 0, 0)
+	local base = baseStrength
+	local gust = gustStrength * (math.sin(TWO_PI * gustFrequency * t) * 0.5 + 0.5)
+	local variation = math.sin(TWO_PI * gustFrequency * 0.3 * t + 1.7) * 0.2 + 1
+	return dir * (base + gust) * variation
+end
+
+function MathUtils.proceduralOceanWave(
+	position: Vector2,
+	t: number,
+	amplitude: number,
+	wavelength: number,
+	speed: number,
+	direction: Vector2?
+): number
+	local dir = direction or Vector2.new(1, 0)
+	if dir.Magnitude < EPSILON then dir = Vector2.new(1, 0) end
+	dir = dir.Unit
+	local k = TWO_PI / math.max(wavelength, EPSILON)
+	local omega = k * speed
+	local phase = dir.X * position.X + dir.Y * position.Y
+	return amplitude * math.sin(k * phase - omega * t)
+end
+
+function MathUtils.proceduralGerstnerWave(
+	position: Vector2,
+	t: number,
+	amplitude: number,
+	wavelength: number,
+	speed: number,
+	steepness: number,
+	direction: Vector2?
+): (number, number, number)
+	local dir = direction or Vector2.new(1, 0)
+	if dir.Magnitude < EPSILON then dir = Vector2.new(1, 0) end
+	dir = dir.Unit
+	local k = TWO_PI / math.max(wavelength, EPSILON)
+	local omega = k * speed
+	local q = steepness / (k * amplitude + EPSILON)
+	local phase = dir.X * position.X + dir.Y * position.Y
+	local cosPhase = math.cos(k * phase - omega * t)
+	local sinPhase = math.sin(k * phase - omega * t)
+	local dx = q * amplitude * dir.X * cosPhase
+	local dz = q * amplitude * dir.Y * cosPhase
+	local dy = amplitude * sinPhase
+	return dx, dy, dz
+end
+
+function MathUtils.proceduralMultiWave(
+	position: Vector2,
+	t: number,
+	waves: {{amplitude: number, wavelength: number, speed: number, direction: Vector2}}
+): number
+	local height = 0
+	for _, wave in ipairs(waves) do
+		height += MathUtils.proceduralOceanWave(position, t, wave.amplitude, wave.wavelength, wave.speed, wave.direction)
+	end
+	return height
+end
+
+function MathUtils.proceduralCameraLag(
+	currentPos: Vector3,
+	targetPos: Vector3,
+	velocity: Vector3,
+	lagAmount: number,
+	dt: number
+): Vector3
+	local prediction = targetPos + velocity * (lagAmount * 0.5)
+	local alpha = 1 - math.exp(-lagAmount * math.max(dt, 0))
+	return currentPos:Lerp(prediction, alpha)
+end
+
+function MathUtils.proceduralLookAhead(
+	position: Vector3,
+	velocity: Vector3,
+	lookAheadDistance: number,
+	lookAheadSmoothing: number,
+	currentLookAt: Vector3?,
+	dt: number?
+): Vector3
+	local speed = velocity.Magnitude
+	if speed < EPSILON then
+		return currentLookAt or position
+	end
+	local dir = velocity / speed
+	local distance = math.min(speed, lookAheadDistance)
+	local target = position + dir * distance
+	if currentLookAt and dt then
+		local alpha = 1 - math.exp(-lookAheadSmoothing * math.max(dt, 0))
+		return currentLookAt:Lerp(target, alpha)
+	end
+	return target
+end
+
+function MathUtils.ikFabrik(
+	joints: {Vector3},
+	target: Vector3,
+	tolerance: number?,
+	maxIterations: number?
+): {Vector3}
+	local n = #joints
+	if n < 2 then return joints end
+	local tol = tolerance or 0.01
+	local maxIter = maxIterations or 10
+	local boneLengths: {number} = {}
+	for i = 1, n - 1 do
+		boneLengths[i] = (joints[i + 1] - joints[i]).Magnitude
+	end
+	local positions: {Vector3} = {}
+	for i = 1, n do
+		positions[i] = joints[i]
+	end
+	local rootPos = positions[1]
+	for _ = 1, maxIter do
+		local endEffector = positions[n]
+		if (endEffector - target).Magnitude < tol then
+			break
+		end
+		positions[n] = target
+		for i = n - 1, 1, -1 do
+			local direction = positions[i] - positions[i + 1]
+			local dist = direction.Magnitude
+			if dist < EPSILON then
+				positions[i] = positions[i + 1] + Vector3.yAxis * boneLengths[i]
+			else
+				positions[i] = positions[i + 1] + direction / dist * boneLengths[i]
+			end
+		end
+		positions[1] = rootPos
+		for i = 2, n do
+			local direction = positions[i] - positions[i - 1]
+			local dist = direction.Magnitude
+			if dist < EPSILON then
+				positions[i] = positions[i - 1] + Vector3.yAxis * boneLengths[i - 1]
+			else
+				positions[i] = positions[i - 1] + direction / dist * boneLengths[i - 1]
+			end
+		end
+	end
+	return positions
+end
+
+function MathUtils.ikFabrikConstrained(
+	joints: {Vector3},
+	target: Vector3,
+	minAngles: {number}?,
+	maxAngles: {number}?,
+	tolerance: number?,
+	maxIterations: number?
+): {Vector3}
+	local n = #joints
+	if n < 2 then return joints end
+	local tol = tolerance or 0.01
+	local maxIter = maxIterations or 10
+	local boneLengths: {number} = {}
+	for i = 1, n - 1 do
+		boneLengths[i] = (joints[i + 1] - joints[i]).Magnitude
+	end
+	local positions: {Vector3} = {}
+	for i = 1, n do
+		positions[i] = joints[i]
+	end
+	local rootPos = positions[1]
+	for _ = 1, maxIter do
+		local endEffector = positions[n]
+		if (endEffector - target).Magnitude < tol then
+			break
+		end
+		positions[n] = target
+		for i = n - 1, 1, -1 do
+			local direction = positions[i] - positions[i + 1]
+			local dist = direction.Magnitude
+			if dist < EPSILON then
+				positions[i] = positions[i + 1] + Vector3.yAxis * boneLengths[i]
+			else
+				positions[i] = positions[i + 1] + direction / dist * boneLengths[i]
+			end
+			if minAngles and maxAngles and i > 1 then
+				local parentDir = (positions[i] - positions[i - 1])
+				if parentDir.Magnitude > EPSILON then
+					parentDir = parentDir.Unit
+					local childDir = (positions[i + 1] - positions[i])
+					if childDir.Magnitude > EPSILON then
+						childDir = childDir.Unit
+						local angle = math.acos(math.clamp(parentDir:Dot(childDir), -1, 1))
+						local minA = minAngles[i] or 0
+						local maxA = maxAngles[i] or math.pi
+						if angle < minA or angle > maxA then
+							local clampedAngle = math.clamp(angle, minA, maxA)
+							local axis = parentDir:Cross(childDir)
+							if axis.Magnitude < EPSILON then
+								axis = Vector3.new(0, 0, 1)
+							end
+							axis = axis.Unit
+							local rotation = CFrame.fromAxisAngle(axis, clampedAngle - angle)
+							local newDir = rotation:VectorToWorldSpace(childDir)
+							positions[i + 1] = positions[i] + newDir * boneLengths[i]
+						end
+					end
+				end
+			end
+		end
+		positions[1] = rootPos
+		for i = 2, n do
+			local direction = positions[i] - positions[i - 1]
+			local dist = direction.Magnitude
+			if dist < EPSILON then
+				positions[i] = positions[i - 1] + Vector3.yAxis * boneLengths[i - 1]
+			else
+				positions[i] = positions[i - 1] + direction / dist * boneLengths[i - 1]
+			end
+		end
+	end
+	return positions
+end
+
+function MathUtils.ikCCD(
+	joints: {Vector3},
+	target: Vector3,
+	tolerance: number?,
+	maxIterations: number?
+): {Vector3}
+	local n = #joints
+	if n < 2 then return joints end
+	local tol = tolerance or 0.01
+	local maxIter = maxIterations or 20
+	local boneLengths: {number} = {}
+	for i = 1, n - 1 do
+		boneLengths[i] = (joints[i + 1] - joints[i]).Magnitude
+	end
+	local positions: {Vector3} = {}
+	for i = 1, n do
+		positions[i] = joints[i]
+	end
+	for _ = 1, maxIter do
+		local endEffector = positions[n]
+		if (endEffector - target).Magnitude < tol then
+			break
+		end
+		for i = n - 1, 1, -1 do
+			local toEnd = positions[n] - positions[i]
+			local toTarget = target - positions[i]
+			if toEnd.Magnitude < EPSILON or toTarget.Magnitude < EPSILON then
+				continue
+			end
+			toEnd = toEnd.Unit
+			toTarget = toTarget.Unit
+			local dot = math.clamp(toEnd:Dot(toTarget), -1, 1)
+			local angle = math.acos(dot)
+			if angle < 0.001 then continue end
+			local axis = toEnd:Cross(toTarget)
+			if axis.Magnitude < EPSILON then continue end
+			axis = axis.Unit
+			local rotation = CFrame.fromAxisAngle(axis, angle)
+			for j = i + 1, n do
+				local offset = positions[j] - positions[i]
+				positions[j] = positions[i] + rotation:VectorToWorldSpace(offset)
+			end
+		end
+	end
+	return positions
+end
+
+function MathUtils.ikTwoBone(
+	root: Vector3,
+	mid: Vector3,
+	tip: Vector3,
+	target: Vector3,
+	poleTarget: Vector3?,
+	softness: number?
+): (Vector3, Vector3, Vector3)
+	local upperLen = (mid - root).Magnitude
+	local lowerLen = (tip - mid).Magnitude
+	local totalLen = upperLen + lowerLen
+	local targetDir = target - root
+	local targetDist = targetDir.Magnitude
+	if targetDist < EPSILON then
+		return root, root + Vector3.yAxis * upperLen, root + Vector3.yAxis * totalLen
+	end
+	local soft = softness or 0
+	local effectiveDist = targetDist
+	if soft > 0 and targetDist > totalLen - soft then
+		local x = targetDist - (totalLen - soft)
+		effectiveDist = totalLen - soft + soft * (1 - math.exp(-x / soft))
+	end
+	effectiveDist = math.clamp(effectiveDist, math.abs(upperLen - lowerLen) + EPSILON, totalLen - EPSILON)
+	local cosAngle = (upperLen * upperLen + effectiveDist * effectiveDist - lowerLen * lowerLen) / (2 * upperLen * effectiveDist)
+	cosAngle = math.clamp(cosAngle, -1, 1)
+	local angle = math.acos(cosAngle)
+	local forward = targetDir / targetDist
+	local poleDir: Vector3
+	if poleTarget then
+		local poleDelta = poleTarget - root
+		local poleOnForward = forward * poleDelta:Dot(forward)
+		poleDir = poleDelta - poleOnForward
+		if poleDir.Magnitude < EPSILON then
+			poleDir = Vector3.yAxis
+		end
+		poleDir = poleDir.Unit
+	else
+		local up = if math.abs(forward:Dot(Vector3.yAxis)) > 0.99 then Vector3.zAxis else Vector3.yAxis
+		poleDir = forward:Cross(up)
+		if poleDir.Magnitude < EPSILON then
+			poleDir = Vector3.xAxis
+		end
+		poleDir = poleDir.Unit
+	end
+	local bendAxis = forward:Cross(poleDir)
+	if bendAxis.Magnitude < EPSILON then
+		bendAxis = Vector3.xAxis
+	end
+	bendAxis = bendAxis.Unit
+	local rotatedForward = CFrame.fromAxisAngle(bendAxis, angle):VectorToWorldSpace(forward)
+	local newMid = root + rotatedForward * upperLen
+	local midToTarget = target - newMid
+	local midToTargetDist = midToTarget.Magnitude
+	local newTip: Vector3
+	if midToTargetDist < EPSILON then
+		newTip = newMid + Vector3.yAxis * lowerLen
+	else
+		newTip = newMid + midToTarget / midToTargetDist * lowerLen
+	end
+	return root, newMid, newTip
+end
+
+function MathUtils.ikLookAt(
+	eyePosition: Vector3,
+	targetPosition: Vector3,
+	upVector: Vector3?
+): CFrame
+	local direction = targetPosition - eyePosition
+	if direction.Magnitude < EPSILON then
+		return CFrame.new(eyePosition)
+	end
+	local up = upVector or Vector3.yAxis
+	return CFrame.lookAt(eyePosition, targetPosition, up)
+end
+
+function MathUtils.ikFootPlacement(
+	hipPosition: Vector3,
+	footTarget: Vector3,
+	legLength: number,
+	kneeDirection: Vector3?
+): (Vector3, Vector3)
+	local upperLen = legLength * 0.5
+	local lowerLen = legLength * 0.5
+	local kneePole = kneeDirection or Vector3.new(0, 0, 1)
+	local _, knee, foot = MathUtils.ikTwoBone(
+		hipPosition,
+		hipPosition + Vector3.new(0, -upperLen, 0),
+		hipPosition + Vector3.new(0, -legLength, 0),
+		footTarget,
+		hipPosition + kneePole
+	)
+	return knee, foot
+end
+
+function MathUtils.bsplineBasis(i: number, p: number, t: number, knots: {number}): number
+	if p == 0 then
+		if t >= knots[i] and t < knots[i + 1] then
+			return 1
+		end
+		return 0
+	end
+	local left = 0
+	local denom1 = knots[i + p] - knots[i]
+	if math.abs(denom1) > EPSILON then
+		left = (t - knots[i]) / denom1 * MathUtils.bsplineBasis(i, p - 1, t, knots)
+	end
+	local right = 0
+	local denom2 = knots[i + p + 1] - knots[i + 1]
+	if math.abs(denom2) > EPSILON then
+		right = (knots[i + p + 1] - t) / denom2 * MathUtils.bsplineBasis(i + 1, p - 1, t, knots)
+	end
+	return left + right
+end
+
+function MathUtils.bsplineEvaluate(
+	controlPoints: {Vector3},
+	degree: number,
+	t: number,
+	knots: {number}?
+): Vector3
+	local n = #controlPoints
+	local p = math.min(degree, n - 1)
+	local knotVector: {number}
+	if knots then
+		knotVector = knots
+	else
+		knotVector = {}
+		local m = n + p + 1
+		for i = 1, m do
+			if i <= p + 1 then
+				knotVector[i] = 0
+			elseif i > n then
+				knotVector[i] = 1
+			else
+				knotVector[i] = (i - p - 1) / (n - p)
+			end
+		end
+	end
+	local tClamped = math.clamp(t, knotVector[1], knotVector[#knotVector] - EPSILON)
+	local result = Vector3.zero
+	for i = 1, n do
+		local basis = MathUtils.bsplineBasis(i, p, tClamped, knotVector)
+		result = result + controlPoints[i] * basis
+	end
+	return result
+end
+
+function MathUtils.bsplineDerivative(
+	controlPoints: {Vector3},
+	degree: number,
+	t: number,
+	knots: {number}?
+): Vector3
+	local n = #controlPoints
+	if n < 2 then return Vector3.zero end
+	local p = math.min(degree, n - 1)
+	local knotVector: {number}
+	if knots then
+		knotVector = knots
+	else
+		knotVector = {}
+		local m = n + p + 1
+		for i = 1, m do
+			if i <= p + 1 then
+				knotVector[i] = 0
+			elseif i > n then
+				knotVector[i] = 1
+			else
+				knotVector[i] = (i - p - 1) / (n - p)
+			end
+		end
+	end
+	local derivPoints: {Vector3} = {}
+	for i = 1, n - 1 do
+		local denom = knotVector[i + p + 1] - knotVector[i + 1]
+		if math.abs(denom) > EPSILON then
+			derivPoints[i] = (controlPoints[i + 1] - controlPoints[i]) * (p / denom)
+		else
+			derivPoints[i] = Vector3.zero
+		end
+	end
+	if #derivPoints < 1 then return Vector3.zero end
+	return MathUtils.bsplineEvaluate(derivPoints, p - 1, t, knotVector)
+end
+
+function MathUtils.nurbsEvaluate(
+	controlPoints: {Vector3},
+	weights: {number},
+	degree: number,
+	t: number,
+	knots: {number}?
+): Vector3
+	local n = #controlPoints
+	local p = math.min(degree, n - 1)
+	local knotVector: {number}
+	if knots then
+		knotVector = knots
+	else
+		knotVector = {}
+		local m = n + p + 1
+		for i = 1, m do
+			if i <= p + 1 then
+				knotVector[i] = 0
+			elseif i > n then
+				knotVector[i] = 1
+			else
+				knotVector[i] = (i - p - 1) / (n - p)
+			end
+		end
+	end
+	local tClamped = math.clamp(t, knotVector[1], knotVector[#knotVector] - EPSILON)
+	local numerator = Vector3.zero
+	local denominator = 0
+	for i = 1, n do
+		local basis = MathUtils.bsplineBasis(i, p, tClamped, knotVector)
+		local w = weights[i] or 1
+		numerator = numerator + controlPoints[i] * (basis * w)
+		denominator += basis * w
+	end
+	if math.abs(denominator) < EPSILON then
+		return controlPoints[1]
+	end
+	return numerator / denominator
+end
+
+function MathUtils.bezierHighOrder(controlPoints: {Vector3}, t: number): Vector3
+	local n = #controlPoints
+	if n == 0 then return Vector3.zero end
+	if n == 1 then return controlPoints[1] end
+	local points: {Vector3} = {}
+	for i = 1, n do
+		points[i] = controlPoints[i]
+	end
+	for j = 1, n - 1 do
+		for i = 1, n - j do
+			points[i] = points[i]:Lerp(points[i + 1], t)
+		end
+	end
+	return points[1]
+end
+
+function MathUtils.bezierHighOrderDerivative(controlPoints: {Vector3}, t: number): Vector3
+	local n = #controlPoints
+	if n < 2 then return Vector3.zero end
+	local derivPoints: {Vector3} = {}
+	for i = 1, n - 1 do
+		derivPoints[i] = (controlPoints[i + 1] - controlPoints[i]) * (n - 1)
+	end
+	return MathUtils.bezierHighOrder(derivPoints, t)
+end
+
+function MathUtils.bezierSplit(controlPoints: {Vector3}, t: number): ({Vector3}, {Vector3})
+	local n = #controlPoints
+	if n == 0 then return {}, {} end
+	local leftPoints: {Vector3} = {}
+	local rightPoints: {Vector3} = {}
+	local points: {{Vector3}} = {}
+	points[1] = {}
+	for i = 1, n do
+		points[1][i] = controlPoints[i]
+	end
+	for j = 2, n do
+		points[j] = {}
+		for i = 1, n - j + 1 do
+			points[j][i] = points[j - 1][i]:Lerp(points[j - 1][i + 1], t)
+		end
+	end
+	for j = 1, n do
+		leftPoints[j] = points[j][1]
+		rightPoints[j] = points[n - j + 1][j]
+	end
+	return leftPoints, rightPoints
+end
+
+function MathUtils.bezierLength(controlPoints: {Vector3}, samples: number?): number
+	local N = samples or 32
+	local totalLength = 0
+	local prev = MathUtils.bezierHighOrder(controlPoints, 0)
+	for i = 1, N do
+		local current = MathUtils.bezierHighOrder(controlPoints, i / N)
+		totalLength += (current - prev).Magnitude
+		prev = current
+	end
+	return totalLength
+end
+
+function MathUtils.bezierClosestPoint(
+	controlPoints: {Vector3},
+	point: Vector3,
+	samples: number?
+): (number, Vector3, number)
+	local N = samples or 64
+	local bestT = 0
+	local bestPoint = MathUtils.bezierHighOrder(controlPoints, 0)
+	local bestDist = (bestPoint - point).Magnitude
+	for i = 1, N do
+		local t = i / N
+		local p = MathUtils.bezierHighOrder(controlPoints, t)
+		local d = (p - point).Magnitude
+		if d < bestDist then
+			bestDist = d
+			bestT = t
+			bestPoint = p
+		end
+	end
+	return bestT, bestPoint, bestDist
+end
+
+function MathUtils.waveSquare(t: number, frequency: number, dutyCycle: number?): number
+	local duty = dutyCycle or 0.5
+	local phase = (t * frequency) % 1
+	return if phase < duty then 1 else -1
+end
+
+function MathUtils.waveSawtooth(t: number, frequency: number): number
+	return 2 * ((t * frequency) % 1) - 1
+end
+
+function MathUtils.waveTriangle(t: number, frequency: number): number
+	local phase = (t * frequency) % 1
+	return 4 * math.abs(phase - 0.5) - 1
+end
+
+function MathUtils.wavePulse(t: number, frequency: number, width: number): number
+	local phase = (t * frequency) % 1
+	return if phase < width then 1 else 0
+end
+
+function MathUtils.waveNoise(t: number, frequency: number, seed: number?): number
+	local s = seed or 0
+	local idx = math.floor(t * frequency)
+	local frac = (t * frequency) - idx
+	local h1 = MathUtils.hashToUnit01(idx + s * 1000)
+	local h2 = MathUtils.hashToUnit01(idx + 1 + s * 1000)
+	return h1 + (h2 - h1) * frac * 2 - 1
+end
+
+function MathUtils.oscillatorSine(t: number, frequency: number, amplitude: number, phase: number?): number
+	local p = phase or 0
+	return amplitude * math.sin(TWO_PI * frequency * t + p)
+end
+
+function MathUtils.oscillatorDamped(
+	t: number,
+	frequency: number,
+	amplitude: number,
+	decay: number,
+	phase: number?
+): number
+	local p = phase or 0
+	return amplitude * math.exp(-decay * t) * math.sin(TWO_PI * frequency * t + p)
+end
+
+function MathUtils.oscillatorFM(
+	t: number,
+	carrierFreq: number,
+	modulatorFreq: number,
+	modulationIndex: number,
+	amplitude: number
+): number
+	local modulator = math.sin(TWO_PI * modulatorFreq * t) * modulationIndex
+	return amplitude * math.sin(TWO_PI * carrierFreq * t + modulator)
+end
+
+function MathUtils.oscillatorAM(
+	t: number,
+	carrierFreq: number,
+	modulatorFreq: number,
+	modulationDepth: number,
+	amplitude: number
+): number
+	local modulator = 1 + modulationDepth * math.sin(TWO_PI * modulatorFreq * t)
+	return amplitude * modulator * math.sin(TWO_PI * carrierFreq * t)
+end
+
+function MathUtils.oscillatorPWM(
+	t: number,
+	frequency: number,
+	modulatorFreq: number,
+	minDuty: number,
+	maxDuty: number
+): number
+	local duty = minDuty + (maxDuty - minDuty) * (math.sin(TWO_PI * modulatorFreq * t) * 0.5 + 0.5)
+	return MathUtils.waveSquare(t, frequency, duty)
+end
+
+function MathUtils.oscillatorLFO(
+	t: number,
+	frequency: number,
+	waveform: string
+): number
+	if waveform == "sine" then
+		return math.sin(TWO_PI * frequency * t)
+	elseif waveform == "square" then
+		return MathUtils.waveSquare(t, frequency)
+	elseif waveform == "sawtooth" then
+		return MathUtils.waveSawtooth(t, frequency)
+	elseif waveform == "triangle" then
+		return MathUtils.waveTriangle(t, frequency)
+	end
+	return math.sin(TWO_PI * frequency * t)
+end
+
+function MathUtils.envelopeADSR(
+	t: number,
+	attack: number,
+	decay: number,
+	sustain: number,
+	release: number,
+	totalDuration: number
+): number
+	local noteOffTime = totalDuration - release
+	if t < 0 then return 0 end
+	if t < attack then
+		return t / math.max(attack, EPSILON)
+	elseif t < attack + decay then
+		local decayProgress = (t - attack) / math.max(decay, EPSILON)
+		return 1 - (1 - sustain) * decayProgress
+	elseif t < noteOffTime then
+		return sustain
+	elseif t < totalDuration then
+		local releaseProgress = (t - noteOffTime) / math.max(release, EPSILON)
+		return sustain * (1 - releaseProgress)
+	end
+	return 0
+end
+
+function MathUtils.envelopeAR(t: number, attack: number, release: number): number
+	local totalDuration = attack + release
+	if t < 0 then return 0 end
+	if t < attack then
+		return t / math.max(attack, EPSILON)
+	elseif t < totalDuration then
+		return 1 - (t - attack) / math.max(release, EPSILON)
+	end
+	return 0
+end
+
+function MathUtils.envelopeExponentialDecay(t: number, decayRate: number): number
+	return math.exp(-math.max(decayRate, 0) * math.max(t, 0))
+end
+
+export type AttractorState = {
+	x: number,
+	y: number,
+	z: number,
+}
+
+function MathUtils.lorenzStep(state: AttractorState, dt: number, sigma: number?, rho: number?, beta: number?): AttractorState
+	local s = sigma or 10
+	local r = rho or 28
+	local b = beta or (8 / 3)
+	local dx = s * (state.y - state.x) * dt
+	local dy = (state.x * (r - state.z) - state.y) * dt
+	local dz = (state.x * state.y - b * state.z) * dt
+	return {
+		x = state.x + dx,
+		y = state.y + dy,
+		z = state.z + dz,
+	}
+end
+
+function MathUtils.rosslerStep(state: AttractorState, dt: number, a: number?, b: number?, c: number?): AttractorState
+	local aVal = a or 0.2
+	local bVal = b or 0.2
+	local cVal = c or 5.7
+	local dx = (-state.y - state.z) * dt
+	local dy = (state.x + aVal * state.y) * dt
+	local dz = (bVal + state.z * (state.x - cVal)) * dt
+	return {
+		x = state.x + dx,
+		y = state.y + dy,
+		z = state.z + dz,
+	}
+end
+
+function MathUtils.thomasStep(state: AttractorState, dt: number, b: number?): AttractorState
+	local bVal = b or 0.208186
+	local dx = (math.sin(state.y) - bVal * state.x) * dt
+	local dy = (math.sin(state.z) - bVal * state.y) * dt
+	local dz = (math.sin(state.x) - bVal * state.z) * dt
+	return {
+		x = state.x + dx,
+		y = state.y + dy,
+		z = state.z + dz,
+	}
+end
+
+function MathUtils.aizawaStep(state: AttractorState, dt: number): AttractorState
+	local a, b, c, d, e, f = 0.95, 0.7, 0.6, 3.5, 0.25, 0.1
+	local dx = ((state.z - b) * state.x - d * state.y) * dt
+	local dy = (d * state.x + (state.z - b) * state.y) * dt
+	local dz = (c + a * state.z - state.z ^ 3 / 3 - (state.x ^ 2 + state.y ^ 2) * (1 + e * state.z) + f * state.z * state.x ^ 3) * dt
+	return {
+		x = state.x + dx,
+		y = state.y + dy,
+		z = state.z + dz,
+	}
+end
+
+function MathUtils.chenStep(state: AttractorState, dt: number, a: number?, b: number?, c: number?): AttractorState
+	local aVal = a or 40
+	local bVal = b or 3
+	local cVal = c or 28
+	local dx = aVal * (state.y - state.x) * dt
+	local dy = ((cVal - aVal) * state.x - state.x * state.z + cVal * state.y) * dt
+	local dz = (state.x * state.y - bVal * state.z) * dt
+	return {
+		x = state.x + dx,
+		y = state.y + dy,
+		z = state.z + dz,
+	}
+end
+
+function MathUtils.attractorTrail(
+	initialState: AttractorState,
+	stepFn: (AttractorState, number) -> AttractorState,
+	dt: number,
+	steps: number
+): {Vector3}
+	local trail: {Vector3} = {}
+	local state = initialState
+	for i = 1, steps do
+		state = stepFn(state, dt)
+		trail[i] = Vector3.new(state.x, state.y, state.z)
+	end
+	return trail
+end
+
+function MathUtils.transformDecompose(cf: CFrame): (Vector3, Vector3, Vector3)
+	local position = cf.Position
+	local rx, ry, rz = cf:ToEulerAnglesXYZ()
+	local rotation = Vector3.new(rx, ry, rz)
+	local scale = Vector3.new(
+		cf.RightVector.Magnitude,
+		cf.UpVector.Magnitude,
+		(-cf.LookVector).Magnitude
+	)
+	return position, rotation, scale
+end
+
+function MathUtils.transformCompose(position: Vector3, rotation: Vector3, scale: Vector3?): CFrame
+	local s = scale or Vector3.one
+	local cf = CFrame.new(position) * CFrame.fromEulerAnglesXYZ(rotation.X, rotation.Y, rotation.Z)
+	if s ~= Vector3.one then
+		local right = cf.RightVector * s.X
+		local up = cf.UpVector * s.Y
+		local back = -cf.LookVector * s.Z
+		cf = CFrame.new(
+			position.X, position.Y, position.Z,
+			right.X, up.X, back.X,
+			right.Y, up.Y, back.Y,
+			right.Z, up.Z, back.Z
+		)
+	end
+	return cf
+end
+
+function MathUtils.transformLerpDecomposed(
+	pos1: Vector3, rot1: Vector3, scale1: Vector3,
+	pos2: Vector3, rot2: Vector3, scale2: Vector3,
+	t: number
+): (Vector3, Vector3, Vector3)
+	local alpha = math.clamp(t, 0, 1)
+	local pos = pos1:Lerp(pos2, alpha)
+	local rotX = rot1.X + MathUtils.angleDifference(rot2.X, rot1.X) * alpha
+	local rotY = rot1.Y + MathUtils.angleDifference(rot2.Y, rot1.Y) * alpha
+	local rotZ = rot1.Z + MathUtils.angleDifference(rot2.Z, rot1.Z) * alpha
+	local rot = Vector3.new(rotX, rotY, rotZ)
+	local scl = scale1:Lerp(scale2, alpha)
+	return pos, rot, scl
+end
+
+function MathUtils.transformPivotRotation(cf: CFrame, pivot: Vector3, rotation: CFrame): CFrame
+	local offset = cf.Position - pivot
+	local rotatedOffset = rotation:VectorToWorldSpace(offset)
+	return CFrame.new(pivot + rotatedOffset) * (rotation * cf.Rotation)
+end
+
+function MathUtils.transformScaleAround(cf: CFrame, pivot: Vector3, scale: Vector3): CFrame
+	local offset = cf.Position - pivot
+	local scaledOffset = Vector3.new(offset.X * scale.X, offset.Y * scale.Y, offset.Z * scale.Z)
+	return CFrame.new(pivot + scaledOffset) * cf.Rotation
+end
+
+function MathUtils.transformMirror(cf: CFrame, planePoint: Vector3, planeNormal: Vector3): CFrame
+	local normal = if planeNormal.Magnitude > EPSILON then planeNormal.Unit else Vector3.yAxis
+	local toPoint = cf.Position - planePoint
+	local dist = toPoint:Dot(normal)
+	local mirroredPos = cf.Position - normal * (2 * dist)
+	local right = cf.RightVector - normal * (2 * cf.RightVector:Dot(normal))
+	local up = cf.UpVector - normal * (2 * cf.UpVector:Dot(normal))
+	local look = -cf.LookVector + normal * (2 * (-cf.LookVector):Dot(normal))
+	return CFrame.new(
+		mirroredPos.X, mirroredPos.Y, mirroredPos.Z,
+		right.X, up.X, -look.X,
+		right.Y, up.Y, -look.Y,
+		right.Z, up.Z, -look.Z
+	)
+end
+
+function MathUtils.transformConstrainToSurface(
+	position: Vector3,
+	surfaceNormal: Vector3,
+	surfacePoint: Vector3
+): Vector3
+	local normal = if surfaceNormal.Magnitude > EPSILON then surfaceNormal.Unit else Vector3.yAxis
+	local toPos = position - surfacePoint
+	local dist = toPos:Dot(normal)
+	return position - normal * dist
+end
+
+function MathUtils.transformSmoothFollow(
+	current: CFrame,
+	target: CFrame,
+	smoothness: number,
+	dt: number
+): CFrame
+	local alpha = 1 - math.exp(-math.max(smoothness, 0) * math.max(dt, 0))
+	return current:Lerp(target, alpha)
+end
+
+function MathUtils.transformSpringFollow(
+	current: CFrame,
+	target: CFrame,
+	velocity: Vector3,
+	angularVelocity: Vector3,
+	stiffness: number,
+	damping: number,
+	dt: number
+): (CFrame, Vector3, Vector3)
+	local posDisp = current.Position - target.Position
+	local posForceMag = posDisp * (-stiffness)
+	local posDamp = velocity * (-damping)
+	local posAccel = posForceMag + posDamp
+	local newVel = velocity + posAccel * dt
+	local newPos = current.Position + newVel * dt
+	local rx1, ry1, rz1 = current:ToEulerAnglesXYZ()
+	local rx2, ry2, rz2 = target:ToEulerAnglesXYZ()
+	local rotDispX = MathUtils.angleDifference(rx1, rx2)
+	local rotDispY = MathUtils.angleDifference(ry1, ry2)
+	local rotDispZ = MathUtils.angleDifference(rz1, rz2)
+	local rotDisp = Vector3.new(rotDispX, rotDispY, rotDispZ)
+	local rotForce = rotDisp * (-stiffness)
+	local rotDamp = angularVelocity * (-damping)
+	local rotAccel = rotForce + rotDamp
+	local newAngVel = angularVelocity + rotAccel * dt
+	local newRot = Vector3.new(rx1, ry1, rz1) + newAngVel * dt
+	local newCFrame = CFrame.new(newPos) * CFrame.fromEulerAnglesXYZ(newRot.X, newRot.Y, newRot.Z)
+	return newCFrame, newVel, newAngVel
+end
+
+function MathUtils.animationKeyframeLerp(
+	keyframes: {{time: number, value: number}},
+	t: number
+): number
+	local n = #keyframes
+	if n == 0 then return 0 end
+	if n == 1 then return keyframes[1].value end
+	if t <= keyframes[1].time then return keyframes[1].value end
+	if t >= keyframes[n].time then return keyframes[n].value end
+	local lo, hi = 1, n
+	while lo < hi - 1 do
+		local mid = math.floor((lo + hi) / 2)
+		if keyframes[mid].time <= t then
+			lo = mid
+		else
+			hi = mid
+		end
+	end
+	local k1 = keyframes[lo]
+	local k2 = keyframes[hi]
+	local alpha = (t - k1.time) / math.max(k2.time - k1.time, EPSILON)
+	return k1.value + (k2.value - k1.value) * alpha
+end
+
+function MathUtils.animationKeyframeLerpV3(
+	keyframes: {{time: number, value: Vector3}},
+	t: number
+): Vector3
+	local n = #keyframes
+	if n == 0 then return Vector3.zero end
+	if n == 1 then return keyframes[1].value end
+	if t <= keyframes[1].time then return keyframes[1].value end
+	if t >= keyframes[n].time then return keyframes[n].value end
+	local lo, hi = 1, n
+	while lo < hi - 1 do
+		local mid = math.floor((lo + hi) / 2)
+		if keyframes[mid].time <= t then
+			lo = mid
+		else
+			hi = mid
+		end
+	end
+	local k1 = keyframes[lo]
+	local k2 = keyframes[hi]
+	local alpha = (t - k1.time) / math.max(k2.time - k1.time, EPSILON)
+	return k1.value:Lerp(k2.value, alpha)
+end
+
+function MathUtils.animationKeyframeCubic(
+	keyframes: {{time: number, value: number, tangentIn: number?, tangentOut: number?}},
+	t: number
+): number
+	local n = #keyframes
+	if n == 0 then return 0 end
+	if n == 1 then return keyframes[1].value end
+	if t <= keyframes[1].time then return keyframes[1].value end
+	if t >= keyframes[n].time then return keyframes[n].value end
+	local lo, hi = 1, n
+	while lo < hi - 1 do
+		local mid = math.floor((lo + hi) / 2)
+		if keyframes[mid].time <= t then
+			lo = mid
+		else
+			hi = mid
+		end
+	end
+	local k1 = keyframes[lo]
+	local k2 = keyframes[hi]
+	local duration = math.max(k2.time - k1.time, EPSILON)
+	local alpha = (t - k1.time) / duration
+	local m0 = (k1.tangentOut or 0) * duration
+	local m1 = (k2.tangentIn or 0) * duration
+	local t2 = alpha * alpha
+	local t3 = t2 * alpha
+	return (2 * t3 - 3 * t2 + 1) * k1.value + (t3 - 2 * t2 + alpha) * m0 + (-2 * t3 + 3 * t2) * k2.value + (t3 - t2) * m1
+end
+
+function MathUtils.animationBlend(
+	value1: number,
+	value2: number,
+	weight: number
+): number
+	return value1 * (1 - weight) + value2 * weight
+end
+
+function MathUtils.animationBlendVector3(
+	value1: Vector3,
+	value2: Vector3,
+	weight: number
+): Vector3
+	return value1:Lerp(value2, math.clamp(weight, 0, 1))
+end
+
+function MathUtils.animationBlendMultiple(
+	values: {number},
+	weights: {number}
+): number
+	local totalWeight = 0
+	local result = 0
+	for i = 1, #values do
+		local w = weights[i] or 0
+		result += values[i] * w
+		totalWeight += w
+	end
+	if totalWeight < EPSILON then return 0 end
+	return result / totalWeight
+end
+
+function MathUtils.animationBlendMultipleV3(
+	values: {Vector3},
+	weights: {number}
+): Vector3
+	local totalWeight = 0
+	local result = Vector3.zero
+	for i = 1, #values do
+		local w = weights[i] or 0
+		result = result + values[i] * w
+		totalWeight += w
+	end
+	if totalWeight < EPSILON then return Vector3.zero end
+	return result / totalWeight
+end
+
+function MathUtils.animationCrossfade(
+	value1: number,
+	value2: number,
+	t: number,
+	duration: number
+): number
+	local alpha = math.clamp(t / math.max(duration, EPSILON), 0, 1)
+	return value1 * (1 - alpha) + value2 * alpha
+end
+
+function MathUtils.animationLayerAdditive(base: number, additive: number, weight: number): number
+	return base + additive * weight
+end
+
+function MathUtils.animationLayerAdditiveV3(base: Vector3, additive: Vector3, weight: number): Vector3
+	return base + additive * weight
+end
+
+function MathUtils.animationTimeWarp(t: number, curve: (number) -> number): number
+	return curve(math.clamp(t, 0, 1))
+end
+
+function MathUtils.animationTimeScale(t: number, speed: number): number
+	return t * speed
+end
+
+function MathUtils.animationPingPong(t: number, duration: number): number
+	local cycle = t / math.max(duration, EPSILON)
+	local phase = cycle % 2
+	if phase > 1 then
+		return 1 - (phase - 1)
+	end
+	return phase
+end
+
+function MathUtils.animationLoopClamp(t: number, duration: number): number
+	return (t % math.max(duration, EPSILON)) / math.max(duration, EPSILON)
+end
+
+export type AnimationTrack = {
+	keyframes: {{time: number, value: number}},
+	duration: number,
+	looping: boolean,
+	speed: number,
+	elapsed: number,
+}
+
+function MathUtils.animationTrackCreate(
+	keyframes: {{time: number, value: number}},
+	looping: boolean?,
+	speed: number?
+): AnimationTrack
+	local maxTime = 0
+	for _, kf in ipairs(keyframes) do
+		if kf.time > maxTime then maxTime = kf.time end
+	end
+	return {
+		keyframes = keyframes,
+		duration = maxTime,
+		looping = looping or false,
+		speed = speed or 1,
+		elapsed = 0,
+	}
+end
+
+function MathUtils.animationTrackSample(track: AnimationTrack, dt: number): number
+	track.elapsed += dt * track.speed
+	local t = track.elapsed
+	if track.looping and track.duration > 0 then
+		t = t % track.duration
+	else
+		t = math.clamp(t, 0, track.duration)
+	end
+	return MathUtils.animationKeyframeLerp(track.keyframes, t)
+end
+
+function MathUtils.motionMatchingScore(
+	currentVelocity: Vector3,
+	candidateVelocity: Vector3,
+	currentFacing: Vector3,
+	candidateFacing: Vector3,
+	velocityWeight: number?,
+	facingWeight: number?
+): number
+	local vw = velocityWeight or 1
+	local fw = facingWeight or 1
+	local velDiff = (currentVelocity - candidateVelocity).Magnitude
+	local faceDot = math.clamp(currentFacing.Unit:Dot(candidateFacing.Unit), -1, 1)
+	local faceScore = 1 - (faceDot + 1) * 0.5
+	return velDiff * vw + faceScore * fw
+end
+
+function MathUtils.motionMatchingBestCandidate(
+	currentVelocity: Vector3,
+	currentFacing: Vector3,
+	candidates: {{velocity: Vector3, facing: Vector3, id: any}},
+	velocityWeight: number?,
+	facingWeight: number?
+): any?
+	local bestScore = math.huge
+	local bestId: any = nil
+	for _, candidate in ipairs(candidates) do
+		local score = MathUtils.motionMatchingScore(
+			currentVelocity, candidate.velocity,
+			currentFacing, candidate.facing,
+			velocityWeight, facingWeight
+		)
+		if score < bestScore then
+			bestScore = score
+			bestId = candidate.id
+		end
+	end
+	return bestId
+end
+
+function MathUtils.rootMotionExtract(
+	startCFrame: CFrame,
+	endCFrame: CFrame
+): (Vector3, Vector3)
+	local deltaPos = endCFrame.Position - startCFrame.Position
+	local startInverse = startCFrame:Inverse()
+	local localDelta = startInverse * endCFrame
+	local rx, ry, rz = localDelta:ToEulerAnglesXYZ()
+	return deltaPos, Vector3.new(rx, ry, rz)
+end
+
+function MathUtils.rootMotionApply(
+	currentCFrame: CFrame,
+	deltaPosition: Vector3,
+	deltaRotation: Vector3,
+	weight: number?
+): CFrame
+	local w = weight or 1
+	local scaledPos = deltaPosition * w
+	local scaledRot = deltaRotation * w
+	local rotCFrame = CFrame.fromEulerAnglesXYZ(scaledRot.X, scaledRot.Y, scaledRot.Z)
+	return currentCFrame * CFrame.new(scaledPos) * rotCFrame
+end
+
+function MathUtils.steeringSeek(
+	position: Vector3,
+	target: Vector3,
+	currentVelocity: Vector3,
+	maxSpeed: number,
+	maxForce: number
+): Vector3
+	local desired = target - position
+	local dist = desired.Magnitude
+	if dist < EPSILON then return Vector3.zero end
+	desired = desired / dist * maxSpeed
+	local steering = desired - currentVelocity
+	local steerMag = steering.Magnitude
+	if steerMag > maxForce then
+		steering = steering / steerMag * maxForce
+	end
+	return steering
+end
+
+function MathUtils.steeringFlee(
+	position: Vector3,
+	threat: Vector3,
+	currentVelocity: Vector3,
+	maxSpeed: number,
+	maxForce: number,
+	fleeRadius: number?
+): Vector3
+	local delta = position - threat
+	local dist = delta.Magnitude
+	local radius = fleeRadius or math.huge
+	if dist > radius then return Vector3.zero end
+	if dist < EPSILON then
+		return Vector3.new(maxForce, 0, 0)
+	end
+	local desired = delta / dist * maxSpeed
+	local steering = desired - currentVelocity
+	local steerMag = steering.Magnitude
+	if steerMag > maxForce then
+		steering = steering / steerMag * maxForce
+	end
+	return steering
+end
+
+function MathUtils.steeringArrive(
+	position: Vector3,
+	target: Vector3,
+	currentVelocity: Vector3,
+	maxSpeed: number,
+	maxForce: number,
+	slowingRadius: number
+): Vector3
+	local delta = target - position
+	local dist = delta.Magnitude
+	if dist < EPSILON then return -currentVelocity end
+	local speed = maxSpeed
+	if dist < slowingRadius then
+		speed = maxSpeed * (dist / slowingRadius)
+	end
+	local desired = delta / dist * speed
+	local steering = desired - currentVelocity
+	local steerMag = steering.Magnitude
+	if steerMag > maxForce then
+		steering = steering / steerMag * maxForce
+	end
+	return steering
+end
+
+function MathUtils.steeringPursuit(
+	position: Vector3,
+	target: Vector3,
+	targetVelocity: Vector3,
+	currentVelocity: Vector3,
+	maxSpeed: number,
+	maxForce: number
+): Vector3
+	local toTarget = target - position
+	local dist = toTarget.Magnitude
+	local speed = currentVelocity.Magnitude
+	local prediction = if speed > EPSILON then dist / speed else 1
+	local predictedTarget = target + targetVelocity * prediction
+	return MathUtils.steeringSeek(position, predictedTarget, currentVelocity, maxSpeed, maxForce)
+end
+
+function MathUtils.steeringEvade(
+	position: Vector3,
+	threat: Vector3,
+	threatVelocity: Vector3,
+	currentVelocity: Vector3,
+	maxSpeed: number,
+	maxForce: number
+): Vector3
+	local toThreat = threat - position
+	local dist = toThreat.Magnitude
+	local speed = currentVelocity.Magnitude
+	local prediction = if speed > EPSILON then dist / speed else 1
+	local predictedThreat = threat + threatVelocity * prediction
+	return MathUtils.steeringFlee(position, predictedThreat, currentVelocity, maxSpeed, maxForce)
+end
+
+function MathUtils.steeringWander(
+	position: Vector3,
+	currentVelocity: Vector3,
+	wanderDistance: number,
+	wanderRadius: number,
+	wanderAngle: number,
+	maxForce: number,
+	rngState: any
+): (Vector3, number)
+	local speed = currentVelocity.Magnitude
+	local forward = if speed > EPSILON then currentVelocity / speed else Vector3.zAxis
+	local center = position + forward * wanderDistance
+	local angleChange = (if rngState then MathUtils.rngRange(rngState, -1, 1) else (math.random() * 2 - 1)) * 0.5
+	local newAngle = wanderAngle + angleChange
+	local offset = Vector3.new(
+		math.cos(newAngle) * wanderRadius,
+		0,
+		math.sin(newAngle) * wanderRadius
+	)
+	local target = center + offset
+	local steering = MathUtils.steeringSeek(position, target, currentVelocity, speed, maxForce)
+	return steering, newAngle
+end
+
+function MathUtils.steeringObstacleAvoidance(
+	position: Vector3,
+	velocity: Vector3,
+	obstacles: {{center: Vector3, radius: number}},
+	lookAhead: number,
+	maxForce: number
+): Vector3
+	local speed = velocity.Magnitude
+	if speed < EPSILON then return Vector3.zero end
+	local forward = velocity / speed
+	local ahead = position + forward * lookAhead
+	local mostThreatening: {center: Vector3, radius: number}? = nil
+	local closestDist = math.huge
+	for _, obstacle in ipairs(obstacles) do
+		local toObstacle = obstacle.center - position
+		local projection = toObstacle:Dot(forward)
+		if projection > 0 and projection < lookAhead then
+			local lateralDist = (obstacle.center - (position + forward * projection)).Magnitude
+			if lateralDist < obstacle.radius then
+				if projection < closestDist then
+					closestDist = projection
+					mostThreatening = obstacle
+				end
+			end
+		end
+	end
+	if mostThreatening then
+		local avoidance = ahead - mostThreatening.center
+		if avoidance.Magnitude < EPSILON then
+			avoidance = Vector3.new(1, 0, 0)
+		end
+		avoidance = avoidance.Unit * maxForce
+		return avoidance
+	end
+	return Vector3.zero
+end
+
+function MathUtils.steeringSeparation(
+	position: Vector3,
+	neighbors: {Vector3},
+	separationRadius: number,
+	maxForce: number
+): Vector3
+	local steering = Vector3.zero
+	local count = 0
+	for _, neighbor in ipairs(neighbors) do
+		local delta = position - neighbor
+		local dist = delta.Magnitude
+		if dist > EPSILON and dist < separationRadius then
+			steering = steering + delta / (dist * dist)
+			count += 1
+		end
+	end
+	if count > 0 then
+		steering = steering / count
+		local mag = steering.Magnitude
+		if mag > EPSILON then
+			steering = steering / mag * maxForce
+		end
+	end
+	return steering
+end
+
+function MathUtils.steeringAlignment(
+	currentVelocity: Vector3,
+	neighborVelocities: {Vector3},
+	maxForce: number
+): Vector3
+	if #neighborVelocities == 0 then return Vector3.zero end
+	local avgVelocity = Vector3.zero
+	for _, vel in ipairs(neighborVelocities) do
+		avgVelocity = avgVelocity + vel
+	end
+	avgVelocity = avgVelocity / #neighborVelocities
+	local steering = avgVelocity - currentVelocity
+	local mag = steering.Magnitude
+	if mag > maxForce then
+		steering = steering / mag * maxForce
+	end
+	return steering
+end
+
+function MathUtils.steeringCohesion(
+	position: Vector3,
+	neighbors: {Vector3},
+	currentVelocity: Vector3,
+	maxSpeed: number,
+	maxForce: number
+): Vector3
+	if #neighbors == 0 then return Vector3.zero end
+	local center = Vector3.zero
+	for _, neighbor in ipairs(neighbors) do
+		center = center + neighbor
+	end
+	center = center / #neighbors
+	return MathUtils.steeringSeek(position, center, currentVelocity, maxSpeed, maxForce)
+end
+
+function MathUtils.steeringFlocking(
+	position: Vector3,
+	velocity: Vector3,
+	neighbors: {{position: Vector3, velocity: Vector3}},
+	separationRadius: number,
+	maxSpeed: number,
+	maxForce: number,
+	separationWeight: number?,
+	alignmentWeight: number?,
+	cohesionWeight: number?
+): Vector3
+	local sw = separationWeight or 1.5
+	local aw = alignmentWeight or 1.0
+	local cw = cohesionWeight or 1.0
+	local neighborPositions: {Vector3} = {}
+	local neighborVelocities: {Vector3} = {}
+	for _, n in ipairs(neighbors) do
+		table.insert(neighborPositions, n.position)
+		table.insert(neighborVelocities, n.velocity)
+	end
+	local sep = MathUtils.steeringSeparation(position, neighborPositions, separationRadius, maxForce) * sw
+	local ali = MathUtils.steeringAlignment(velocity, neighborVelocities, maxForce) * aw
+	local coh = MathUtils.steeringCohesion(position, neighborPositions, velocity, maxSpeed, maxForce) * cw
+	local total = sep + ali + coh
+	local mag = total.Magnitude
+	if mag > maxForce then
+		total = total / mag * maxForce
+	end
+	return total
+end
+
+function MathUtils.steeringPathFollow(
+	position: Vector3,
+	velocity: Vector3,
+	path: {Vector3},
+	pathRadius: number,
+	maxSpeed: number,
+	maxForce: number,
+	lookAhead: number?
+): Vector3
+	local n = #path
+	if n < 2 then
+		if n == 1 then
+			return MathUtils.steeringSeek(position, path[1], velocity, maxSpeed, maxForce)
+		end
+		return Vector3.zero
+	end
+	local speed = velocity.Magnitude
+	local predictedPos = position + (if speed > EPSILON then velocity / speed else Vector3.zAxis) * (lookAhead or 1)
+	local closestDist = math.huge
+	local closestPoint = path[1]
+	local closestSegment = 1
+	for i = 1, n - 1 do
+		local segStart = path[i]
+		local segEnd = path[i + 1]
+		local segDir = segEnd - segStart
+		local segLen = segDir.Magnitude
+		if segLen < EPSILON then continue end
+		local segUnit = segDir / segLen
+		local toPoint = predictedPos - segStart
+		local proj = math.clamp(toPoint:Dot(segUnit), 0, segLen)
+		local closest = segStart + segUnit * proj
+		local dist = (predictedPos - closest).Magnitude
+		if dist < closestDist then
+			closestDist = dist
+			closestPoint = closest
+			closestSegment = i
+		end
+	end
+	if closestDist > pathRadius then
+		return MathUtils.steeringSeek(position, closestPoint, velocity, maxSpeed, maxForce)
+	end
+	local targetSeg = closestSegment
+	local segDir = path[math.min(targetSeg + 1, n)] - path[targetSeg]
+	if segDir.Magnitude > EPSILON then
+		local target = closestPoint + segDir.Unit * (lookAhead or 1)
+		return MathUtils.steeringSeek(position, target, velocity, maxSpeed, maxForce)
+	end
+	return MathUtils.steeringSeek(position, closestPoint, velocity, maxSpeed, maxForce)
+end
+
+function MathUtils.steeringFlowField(
+	position: Vector3,
+	flowFieldFn: (Vector3) -> Vector3,
+	currentVelocity: Vector3,
+	maxSpeed: number,
+	maxForce: number
+): Vector3
+	local desired = flowFieldFn(position)
+	if desired.Magnitude < EPSILON then return Vector3.zero end
+	desired = desired.Unit * maxSpeed
+	local steering = desired - currentVelocity
+	local mag = steering.Magnitude
+	if mag > maxForce then
+		steering = steering / mag * maxForce
+	end
+	return steering
+end
+
+function MathUtils.cameraFirstPerson(
+	eyePosition: Vector3,
+	yaw: number,
+	pitch: number,
+	roll: number?
+): CFrame
+	local r = roll or 0
+	return CFrame.new(eyePosition)
+		* CFrame.fromEulerAnglesYXZ(pitch, yaw, r)
+end
+
+function MathUtils.cameraThirdPerson(
+	targetPosition: Vector3,
+	yaw: number,
+	pitch: number,
+	distance: number,
+	offset: Vector3?
+): CFrame
+	local off = offset or Vector3.zero
+	local rotation = CFrame.fromEulerAnglesYXZ(pitch, yaw, 0)
+	local position = targetPosition + rotation:VectorToWorldSpace(Vector3.new(0, 0, distance)) + off
+	return CFrame.lookAt(position, targetPosition + off)
+end
+
+function MathUtils.cameraOrbit(
+	center: Vector3,
+	yaw: number,
+	pitch: number,
+	distance: number
+): CFrame
+	local clampedPitch = math.clamp(pitch, -HALF_PI + 0.01, HALF_PI - 0.01)
+	local x = distance * math.cos(clampedPitch) * math.sin(yaw)
+	local y = distance * math.sin(clampedPitch)
+	local z = distance * math.cos(clampedPitch) * math.cos(yaw)
+	local position = center + Vector3.new(x, y, z)
+	return CFrame.lookAt(position, center)
+end
+
+function MathUtils.cameraDollyZoom(
+	fov: number,
+	targetWidth: number,
+	distance: number
+): number
+	if distance <= EPSILON then return fov end
+	return 2 * math.atan(targetWidth / (2 * distance)) * RAD_TO_DEG
+end
+
+function MathUtils.cameraFrustumCorners(
+	cameraCFrame: CFrame,
+	fov: number,
+	aspect: number,
+	nearDist: number,
+	farDist: number
+): {Vector3}
+	local halfFov = math.rad(fov) * 0.5
+	local nearHeight = 2 * math.tan(halfFov) * nearDist
+	local nearWidth = nearHeight * aspect
+	local farHeight = 2 * math.tan(halfFov) * farDist
+	local farWidth = farHeight * aspect
+	local forward = -cameraCFrame.LookVector
+	local right = cameraCFrame.RightVector
+	local up = cameraCFrame.UpVector
+	local pos = cameraCFrame.Position
+	local nearCenter = pos + forward * nearDist
+	local farCenter = pos + forward * farDist
+	local nHalfW = nearWidth * 0.5
+	local nHalfH = nearHeight * 0.5
+	local fHalfW = farWidth * 0.5
+	local fHalfH = farHeight * 0.5
+	return {
+		nearCenter - right * nHalfW + up * nHalfH,
+		nearCenter + right * nHalfW + up * nHalfH,
+		nearCenter + right * nHalfW - up * nHalfH,
+		nearCenter - right * nHalfW - up * nHalfH,
+		farCenter - right * fHalfW + up * fHalfH,
+		farCenter + right * fHalfW + up * fHalfH,
+		farCenter + right * fHalfW - up * fHalfH,
+		farCenter - right * fHalfW - up * fHalfH,
+	}
+end
+
+function MathUtils.cameraScreenToWorldRay(
+	cameraCFrame: CFrame,
+	fov: number,
+	viewportSize: Vector2,
+	screenPosition: Vector2
+): (Vector3, Vector3)
+	local halfFov = math.rad(fov) * 0.5
+	local aspect = viewportSize.X / math.max(viewportSize.Y, 1)
+	local ndcX = (screenPosition.X / viewportSize.X) * 2 - 1
+	local ndcY = 1 - (screenPosition.Y / viewportSize.Y) * 2
+	local tanHalf = math.tan(halfFov)
+	local dirX = ndcX * tanHalf * aspect
+	local dirY = ndcY * tanHalf
+	local dirZ = -1
+	local localDir = Vector3.new(dirX, dirY, dirZ).Unit
+	local worldDir = cameraCFrame:VectorToWorldSpace(localDir)
+	return cameraCFrame.Position, worldDir
+end
+
+function MathUtils.cameraWorldToScreen(
+	cameraCFrame: CFrame,
+	fov: number,
+	viewportSize: Vector2,
+	worldPosition: Vector3
+): (Vector2, boolean)
+	local localPos = cameraCFrame:PointToObjectSpace(worldPosition)
+	local z = -localPos.Z
+	if z <= 0 then
+		return Vector2.new(-1, -1), false
+	end
+	local halfFov = math.rad(fov) * 0.5
+	local tanHalf = math.tan(halfFov)
+	local aspect = viewportSize.X / math.max(viewportSize.Y, 1)
+	local ndcX = localPos.X / (z * tanHalf * aspect)
+	local ndcY = localPos.Y / (z * tanHalf)
+	local screenX = (ndcX + 1) * 0.5 * viewportSize.X
+	local screenY = (1 - ndcY) * 0.5 * viewportSize.Y
+	local onScreen = screenX >= 0 and screenX <= viewportSize.X and screenY >= 0 and screenY <= viewportSize.Y
+	return Vector2.new(screenX, screenY), onScreen
+end
+
+function MathUtils.cameraDepthOfFieldCircle(
+	objectDist: number,
+	focalDist: number,
+	aperture: number,
+	focalLength: number
+): number
+	if objectDist <= EPSILON or focalDist <= EPSILON or aperture <= EPSILON then
+		return 0
+	end
+	local coc = math.abs(aperture * focalLength * (objectDist - focalDist) / (objectDist * (focalDist - focalLength)))
+	return coc
+end
+
+function MathUtils.cameraExposureEV(aperture: number, shutterSpeed: number, iso: number): number
+	if aperture <= 0 or shutterSpeed <= 0 or iso <= 0 then return 0 end
+	return math.log(aperture * aperture / shutterSpeed, 2) - math.log(iso / 100, 2)
+end
+
+function MathUtils.colorTemperatureToRGB(kelvin: number): (number, number, number)
+	local temp = math.clamp(kelvin, 1000, 40000) / 100
+	local r, g, b: number
+	if temp <= 66 then
+		r = 1
+		g = math.clamp(0.39008157876902 * math.log(temp) - 0.63184144378863, 0, 1)
+		if temp <= 19 then
+			b = 0
+		else
+			b = math.clamp(0.54320678911019 * math.log(temp - 10) - 1.19625408914, 0, 1)
+		end
+	else
+		r = math.clamp(1.29293618606274 * (temp - 60) ^ -0.1332047592, 0, 1)
+		g = math.clamp(1.12989086089529 * (temp - 60) ^ -0.0755148492, 0, 1)
+		b = 1
+	end
+	return r, g, b
+end
+
+function MathUtils.colorWhiteBalance(
+	r: number, g: number, b: number,
+	sourceKelvin: number, targetKelvin: number
+): (number, number, number)
+	local sr, sg, sb = MathUtils.colorTemperatureToRGB(sourceKelvin)
+	local tr, tg, tb = MathUtils.colorTemperatureToRGB(targetKelvin)
+	local scaleR = if sr > EPSILON then tr / sr else 1
+	local scaleG = if sg > EPSILON then tg / sg else 1
+	local scaleB = if sb > EPSILON then tb / sb else 1
+	return math.clamp(r * scaleR, 0, 1), math.clamp(g * scaleG, 0, 1), math.clamp(b * scaleB, 0, 1)
+end
+
+function MathUtils.colorVibrance(r: number, g: number, b: number, amount: number): (number, number, number)
+	local maxC = math.max(r, g, b)
+	local minC = math.min(r, g, b)
+	local saturation = if maxC > EPSILON then (maxC - minC) / maxC else 0
+	local adjustment = amount * (1 - saturation) * (1 - saturation)
+	local gray = (r + g + b) / 3
+
+	local newR = math.clamp(r + (r - gray) * adjustment, 0, 1)
+	local newG = math.clamp(g + (g - gray) * adjustment, 0, 1)
+	local newB = math.clamp(b + (b - gray) * adjustment, 0, 1)
+
+	return newR, newG, newB
+end
+
+function MathUtils.colorSaturate(r: number, g: number, b: number, amount: number): (number, number, number)
+	local gray = 0.2126 * r + 0.7152 * g + 0.0722 * b
+	local factor = 1 + amount
+
+	local outR = math.clamp(gray + (r - gray) * factor, 0, 1)
+	local outG = math.clamp(gray + (g - gray) * factor, 0, 1)
+	local outB = math.clamp(gray + (b - gray) * factor, 0, 1)
+
+	return outR, outG, outB
+end
+
+function MathUtils.colorContrast(r: number, g: number, b: number, contrast: number): (number, number, number)
+	local factor = (259 * (contrast + 255)) / (255 * (259 - contrast))
+
+	local outR = math.clamp(factor * (r - 0.5) + 0.5, 0, 1)
+	local outG = math.clamp(factor * (g - 0.5) + 0.5, 0, 1)
+	local outB = math.clamp(factor * (b - 0.5) + 0.5, 0, 1)
+
+	return outR, outG, outB
+end
+
+function MathUtils.colorBrightness(r: number, g: number, b: number, amount: number): (number, number, number)
+	local outR = math.clamp(r + amount, 0, 1)
+	local outG = math.clamp(g + amount, 0, 1)
+	local outB = math.clamp(b + amount, 0, 1)
+
+	return outR, outG, outB
+end
+
+function MathUtils.colorGamma(r: number, g: number, b: number, gamma: number): (number, number, number)
+	local invGamma = 1 / math.max(gamma, EPSILON)
+
+	local outR = math.clamp(r ^ invGamma, 0, 1)
+	local outG = math.clamp(g ^ invGamma, 0, 1)
+	local outB = math.clamp(b ^ invGamma, 0, 1)
+
+	return outR, outG, outB
+end
+
+function MathUtils.colorInvert(r: number, g: number, b: number): (number, number, number)
+	return 1 - r, 1 - g, 1 - b
+end
+
+function MathUtils.colorGrayscale(r: number, g: number, b: number): number
+	return 0.2126 * r + 0.7152 * g + 0.0722 * b
+end
+
+function MathUtils.colorSepia(r: number, g: number, b: number): (number, number, number)
+	local tr = math.clamp(0.393 * r + 0.769 * g + 0.189 * b, 0, 1)
+	local tg = math.clamp(0.349 * r + 0.686 * g + 0.168 * b, 0, 1)
+	local tb = math.clamp(0.272 * r + 0.534 * g + 0.131 * b, 0, 1)
+	return tr, tg, tb
+end
+
+function MathUtils.colorPosterize(r: number, g: number, b: number, levels: number): (number, number, number)
+	local lvl = math.max(levels, 2)
+	local function posterize(c: number): number
+		return math.floor(c * (lvl - 1) + 0.5) / (lvl - 1)
+	end
+	return posterize(r), posterize(g), posterize(b)
+end
+
+function MathUtils.colorThreshold(r: number, g: number, b: number, threshold: number): (number, number, number)
+	local lum = MathUtils.colorGrayscale(r, g, b)
+	if lum >= threshold then
+		return 1, 1, 1
+	end
+	return 0, 0, 0
+end
+
+function MathUtils.colorQuantize(r: number, g: number, b: number, palette: {{number}}): (number, number, number)
+	local bestDist = math.huge
+	local bestR, bestG, bestB = r, g, b
+	for _, color in ipairs(palette) do
+		local dr = r - color[1]
+		local dg = g - color[2]
+		local db = b - color[3]
+		local dist = dr * dr + dg * dg + db * db
+		if dist < bestDist then
+			bestDist = dist
+			bestR = color[1]
+			bestG = color[2]
+			bestB = color[3]
+		end
+	end
+	return bestR, bestG, bestB
+end
+
+function MathUtils.colorGradientSample(
+	stops: {{position: number, r: number, g: number, b: number}},
+	t: number
+): (number, number, number)
+	local n = #stops
+	if n == 0 then return 0, 0, 0 end
+	if n == 1 then return stops[1].r, stops[1].g, stops[1].b end
+	if t <= stops[1].position then return stops[1].r, stops[1].g, stops[1].b end
+	if t >= stops[n].position then return stops[n].r, stops[n].g, stops[n].b end
+
+	for i = 1, n - 1 do
+		if t >= stops[i].position and t <= stops[i + 1].position then
+			local startStop = stops[i]
+			local endStop = stops[i + 1]
+
+			local alpha = (t - startStop.position) / math.max(endStop.position - startStop.position, EPSILON)
+
+			local r = startStop.r + (endStop.r - startStop.r) * alpha
+			local g = startStop.g + (endStop.g - startStop.g) * alpha
+			local b = startStop.b + (endStop.b - startStop.b) * alpha
+
+			return r, g, b
+		end
+	end
+	return stops[n].r, stops[n].g, stops[n].b
+end
+
+export type FluidCell = {
+	velocity: Vector2,
+	density: number,
+	pressure: number,
+}
+
+export type FluidGrid = {
+	width: number,
+	height: number,
+	cells: {{FluidCell}},
+	viscosity: number,
+	diffusion: number,
+}
+
+function MathUtils.fluidGridCreate(width: number, height: number, viscosity: number?, diffusion: number?): FluidGrid
+	local cells: {{FluidCell}} = {}
+	for y = 1, height do
+		cells[y] = {}
+		for x = 1, width do
+			cells[y][x] = {
+				velocity = Vector2.zero,
+				density = 0,
+				pressure = 0,
+			}
+		end
+	end
+	return {
+		width = width,
+		height = height,
+		cells = cells,
+		viscosity = viscosity or 0.0001,
+		diffusion = diffusion or 0.0001,
+	}
+end
+
+function MathUtils.fluidAddDensity(grid: FluidGrid, x: number, y: number, amount: number)
+	local cx = math.clamp(math.floor(x), 1, grid.width)
+	local cy = math.clamp(math.floor(y), 1, grid.height)
+	grid.cells[cy][cx].density += amount
+end
+
+function MathUtils.fluidAddVelocity(grid: FluidGrid, x: number, y: number, vx: number, vy: number)
+	local cx = math.clamp(math.floor(x), 1, grid.width)
+	local cy = math.clamp(math.floor(y), 1, grid.height)
+	grid.cells[cy][cx].velocity = grid.cells[cy][cx].velocity + Vector2.new(vx, vy)
+end
+
+function MathUtils.fluidDiffuseStep(grid: FluidGrid, dt: number, iterations: number?)
+	local iters = iterations or 4
+	local a = dt * grid.diffusion * grid.width * grid.height
+	for _ = 1, iters do
+		for y = 2, grid.height - 1 do
+			for x = 2, grid.width - 1 do
+				local sum = grid.cells[y - 1][x].density + grid.cells[y + 1][x].density
+					+ grid.cells[y][x - 1].density + grid.cells[y][x + 1].density
+				grid.cells[y][x].density = (grid.cells[y][x].density + a * sum) / (1 + 4 * a)
+			end
+		end
+	end
+end
+
+function MathUtils.fluidAdvectStep(grid: FluidGrid, dt: number)
+	local newDensity: {{number}} = {}
+	for y = 1, grid.height do
+		newDensity[y] = {}
+		for x = 1, grid.width do
+			newDensity[y][x] = 0
+		end
+	end
+	for y = 2, grid.height - 1 do
+		for x = 2, grid.width - 1 do
+			local vel = grid.cells[y][x].velocity
+			local srcX = x - vel.X * dt
+			local srcY = y - vel.Y * dt
+			srcX = math.clamp(srcX, 1.5, grid.width - 0.5)
+			srcY = math.clamp(srcY, 1.5, grid.height - 0.5)
+			local x0 = math.floor(srcX)
+			local y0 = math.floor(srcY)
+			local x1 = x0 + 1
+			local y1 = y0 + 1
+			local sx = srcX - x0
+			local sy = srcY - y0
+			x0 = math.clamp(x0, 1, grid.width)
+			x1 = math.clamp(x1, 1, grid.width)
+			y0 = math.clamp(y0, 1, grid.height)
+			y1 = math.clamp(y1, 1, grid.height)
+			newDensity[y][x] = (1 - sx) * (1 - sy) * grid.cells[y0][x0].density
+				+ sx * (1 - sy) * grid.cells[y0][x1].density
+				+ (1 - sx) * sy * grid.cells[y1][x0].density
+				+ sx * sy * grid.cells[y1][x1].density
+		end
+	end
+	for y = 1, grid.height do
+		for x = 1, grid.width do
+			grid.cells[y][x].density = newDensity[y][x]
+		end
+	end
+end
+
+function MathUtils.fluidStep(grid: FluidGrid, dt: number, iterations: number?)
+	MathUtils.fluidDiffuseStep(grid, dt, iterations)
+	MathUtils.fluidAdvectStep(grid, dt)
+end
+
+function MathUtils.sdfSphere(point: Vector3, center: Vector3, radius: number): number
+	return (point - center).Magnitude - radius
+end
+
+function MathUtils.sdfBox(point: Vector3, center: Vector3, halfExtents: Vector3): number
+	local d = MathUtils.vector3Abs(point - center) - halfExtents
+	local outside = Vector3.new(math.max(d.X, 0), math.max(d.Y, 0), math.max(d.Z, 0)).Magnitude
+	local inside = math.min(math.max(d.X, d.Y, d.Z), 0)
+	return outside + inside
+end
+
+function MathUtils.sdfCylinder(point: Vector3, center: Vector3, height: number, radius: number): number
+	local p = point - center
+	local d = Vector2.new(Vector2.new(p.X, p.Z).Magnitude - radius, math.abs(p.Y) - height * 0.5)
+	return math.min(math.max(d.X, d.Y), 0) + Vector2.new(math.max(d.X, 0), math.max(d.Y, 0)).Magnitude
+end
+
+function MathUtils.sdfTorus(point: Vector3, center: Vector3, majorRadius: number, minorRadius: number): number
+	local p = point - center
+	local q = Vector2.new(Vector2.new(p.X, p.Z).Magnitude - majorRadius, p.Y)
+	return q.Magnitude - minorRadius
+end
+
+function MathUtils.sdfCone(point: Vector3, center: Vector3, height: number, radius: number): number
+	local p = point - center
+	local q = Vector2.new(Vector2.new(p.X, p.Z).Magnitude, p.Y)
+	local tip = Vector2.new(0, height)
+	local base = Vector2.new(radius, 0)
+	local edge = base - tip
+	local toQ = q - tip
+	local t = math.clamp(toQ:Dot(edge) / edge:Dot(edge), 0, 1)
+	local closest = tip + edge * t
+	return (q - closest).Magnitude * (if q.X * edge.Y - q.Y * edge.X > 0 then 1 else -1)
+end
+
+function MathUtils.sdfRoundBox(point: Vector3, center: Vector3, halfExtents: Vector3, rounding: number): number
+	return MathUtils.sdfBox(point, center, halfExtents - Vector3.one * rounding) - rounding
+end
+
+function MathUtils.sdfElongateX(point: Vector3, center: Vector3, elongation: number, sdfFn: (Vector3) -> number): number
+	local p = point - center
+	local q = Vector3.new(math.max(math.abs(p.X) - elongation, 0), p.Y, p.Z)
+	return sdfFn(q + center)
+end
+
+function MathUtils.sdfRepeat(point: Vector3, period: Vector3, sdfFn: (Vector3) -> number): number
+	local q = Vector3.new(
+		((point.X + period.X * 0.5) % period.X) - period.X * 0.5,
+		((point.Y + period.Y * 0.5) % period.Y) - period.Y * 0.5,
+		((point.Z + period.Z * 0.5) % period.Z) - period.Z * 0.5
+	)
+	return sdfFn(q)
+end
+
+function MathUtils.sdfTwist(point: Vector3, center: Vector3, twistAmount: number, sdfFn: (Vector3) -> number): number
+	local p = point - center
+	local c = math.cos(twistAmount * p.Y)
+	local s = math.sin(twistAmount * p.Y)
+	local twisted = Vector3.new(c * p.X - s * p.Z, p.Y, s * p.X + c * p.Z)
+	return sdfFn(twisted + center)
+end
+
+function MathUtils.sdfBend(point: Vector3, center: Vector3, bendAmount: number, sdfFn: (Vector3) -> number): number
+	local p = point - center
+	local c = math.cos(bendAmount * p.X)
+	local s = math.sin(bendAmount * p.X)
+	local bent = Vector3.new(c * p.X - s * p.Y, s * p.X + c * p.Y, p.Z)
+	return sdfFn(bent + center)
+end
+
+function MathUtils.sdfOnion(dist: number, thickness: number): number
+	return math.abs(dist) - thickness
+end
+
+function MathUtils.sdfDisplace(point: Vector3, baseDist: number, displaceFn: (Vector3) -> number): number
+	return baseDist + displaceFn(point)
+end
+
+function MathUtils.sdfRayMarch(
+	origin: Vector3,
+	direction: Vector3,
+	sdfFn: (Vector3) -> number,
+	maxSteps: number?,
+	maxDist: number?,
+	surfaceThreshold: number?
+): (boolean, number, Vector3)
+	local steps = maxSteps or 64
+	local maxD = maxDist or 100
+	local threshold = surfaceThreshold or 0.001
+	local dir = if direction.Magnitude > EPSILON then direction.Unit else Vector3.zAxis
+	local totalDist = 0
+	for _ = 1, steps do
+		local point = origin + dir * totalDist
+		local dist = sdfFn(point)
+		if dist < threshold then
+			return true, totalDist, point
+		end
+		totalDist += dist
+		if totalDist > maxD then
+			break
+		end
+	end
+	return false, totalDist, origin + dir * totalDist
+end
+
+function MathUtils.sdfNormal(point: Vector3, sdfFn: (Vector3) -> number, eps: number?): Vector3
+	local e = eps or 0.0001
+	local dx = sdfFn(point + Vector3.new(e, 0, 0)) - sdfFn(point - Vector3.new(e, 0, 0))
+	local dy = sdfFn(point + Vector3.new(0, e, 0)) - sdfFn(point - Vector3.new(0, e, 0))
+	local dz = sdfFn(point + Vector3.new(0, 0, e)) - sdfFn(point - Vector3.new(0, 0, e))
+	local normal = Vector3.new(dx, dy, dz)
+	if normal.Magnitude < EPSILON then return Vector3.yAxis end
+	return normal.Unit
+end
+
+function MathUtils.particleEmit(
+	origin: Vector3,
+	direction: Vector3,
+	spread: number,
+	speed: number,
+	speedVariance: number?,
+	rngState: any
+): (Vector3, Vector3)
+	local dir = if direction.Magnitude > EPSILON then direction.Unit else Vector3.yAxis
+	local right = dir:Cross(Vector3.yAxis)
+	if right.Magnitude < EPSILON then
+		right = dir:Cross(Vector3.xAxis)
+	end
+	right = right.Unit
+	local up = right:Cross(dir).Unit
+	local angleX = (if rngState then MathUtils.rngRange(rngState, -1, 1) else (math.random() * 2 - 1)) * spread
+	local angleY = (if rngState then MathUtils.rngRange(rngState, -1, 1) else (math.random() * 2 - 1)) * spread
+	local sprayDir = (dir + right * math.sin(angleX) + up * math.sin(angleY))
+	if sprayDir.Magnitude > EPSILON then
+		sprayDir = sprayDir.Unit
+	else
+		sprayDir = dir
+	end
+	local variance = speedVariance or 0
+	local actualSpeed = speed + (if rngState then MathUtils.rngRange(rngState, -variance, variance) else (math.random() * 2 - 1) * variance)
+	return origin, sprayDir * actualSpeed
+end
+
+function MathUtils.particleUpdatePosition(
+	position: Vector3,
+	velocity: Vector3,
+	gravity: Vector3,
+	drag: number,
+	dt: number
+): (Vector3, Vector3)
+	local safeDt = math.max(dt, 0)
+	local newVelocity = (velocity + gravity * safeDt) * math.max(1 - drag * safeDt, 0)
+	local newPosition = position + newVelocity * safeDt
+	return newPosition, newVelocity
+end
+
+function MathUtils.particleLifetimeAlpha(age: number, lifetime: number, fadeIn: number?, fadeOut: number?): number
+	local fi = fadeIn or 0.1
+	local fo = fadeOut or 0.3
+	local progress = age / math.max(lifetime, EPSILON)
+	if progress >= 1 then return 0 end
+	local alpha = 1.0
+	if progress < fi then
+		alpha = progress / fi
+	elseif progress > 1 - fo then
+		alpha = (1 - progress) / fo
+	end
+	return math.clamp(alpha, 0, 1)
+end
+
+function MathUtils.particleSizeOverLife(age: number, lifetime: number, startSize: number, endSize: number, curve: ((number) -> number)?): number
+	local progress = math.clamp(age / math.max(lifetime, EPSILON), 0, 1)
+	local t = if curve then curve(progress) else progress
+	return startSize + (endSize - startSize) * t
+end
+
+function MathUtils.particleColorOverLife(
+	age: number,
+	lifetime: number,
+	startColor: {number},
+	endColor: {number}
+): (number, number, number)
+	local progress = math.clamp(age / math.max(lifetime, EPSILON), 0, 1)
+
+	local r = startColor[1] + (endColor[1] - startColor[1]) * progress
+	local g = startColor[2] + (endColor[2] - startColor[2]) * progress
+	local b = startColor[3] + (endColor[3] - startColor[3]) * progress
+
+	return r, g, b
+end
+
+function MathUtils.particleVortex(
+	position: Vector3,
+	center: Vector3,
+	axis: Vector3,
+	strength: number
+): Vector3
+	local axisUnit = if axis.Magnitude > EPSILON then axis.Unit else Vector3.yAxis
+	local toParticle = position - center
+	local projected = toParticle - axisUnit * toParticle:Dot(axisUnit)
+	local dist = projected.Magnitude
+	if dist < EPSILON then return Vector3.zero end
+	local tangent = axisUnit:Cross(projected).Unit
+	return tangent * (strength / math.max(dist, EPSILON))
+end
+
+function MathUtils.particleTurbulence(
+	position: Vector3,
+	t: number,
+	frequency: number,
+	amplitude: number,
+	octaves: number?
+): Vector3
+	local oct = octaves or 3
+	local fx = 0
+	local fy = 0
+	local fz = 0
+	local amp = amplitude
+	local freq = frequency
+	for _ = 1, oct do
+		fx += MathUtils.perlin3(position.X * freq + t, position.Y * freq, position.Z * freq) * amp
+		fy += MathUtils.perlin3(position.X * freq, position.Y * freq + t, position.Z * freq + 100) * amp
+		fz += MathUtils.perlin3(position.X * freq + 200, position.Y * freq, position.Z * freq + t) * amp
+		amp *= 0.5
+		freq *= 2
+	end
+	return Vector3.new(fx, fy, fz)
+end
+
+function MathUtils.proceduralFireFlicker(t: number, intensity: number, speed: number?): number
+	local s = speed or 10
+	local base = 0.7
+	local flicker = MathUtils.perlin3(t * s, 0, 0) * 0.15
+	local rapid = math.sin(t * s * 3.7) * 0.05
+	local slow = math.sin(t * s * 0.3) * 0.1
+	return math.clamp((base + flicker + rapid + slow) * intensity, 0, intensity)
+end
+
+function MathUtils.proceduralPulse(t: number, frequency: number, sharpness: number?): number
+	local sharp = sharpness or 2
+	local phase = (t * frequency) % 1
+	return math.exp(-sharp * (1 - math.cos(TWO_PI * phase)))
+end
+
+function MathUtils.proceduralHeartbeat(t: number, bpm: number): number
+	local period = 60 / math.max(bpm, 1)
+	local phase = (t % period) / period
+	local beat1 = math.exp(-50 * (phase - 0.1) ^ 2)
+	local beat2 = math.exp(-50 * (phase - 0.25) ^ 2) * 0.6
+	return beat1 + beat2
+end
+
+function MathUtils.proceduralLightning(t: number, frequency: number, jaggedness: number?): number
+	local jag = jaggedness or 5
+	local base = MathUtils.perlin3(t * frequency * jag, t * 2, 0)
+	local detail = MathUtils.perlin3(t * frequency * jag * 3, t * 5, 100) * 0.5
+	local flash = math.exp(-10 * ((t * frequency) % 1))
+	return math.clamp((base + detail) * flash, 0, 1)
+end
+
+function MathUtils.proceduralElectricArc(
+	startPoint: Vector3,
+	endPoint: Vector3,
+	segments: number,
+	displacement: number,
+	seed: number?
+): {Vector3}
+	local s = seed or 0
+	local points: {Vector3} = {}
+	local direction = endPoint - startPoint
+	local length = direction.Magnitude
+	if length < EPSILON then return {startPoint} end
+	local forward = direction / length
+	local right = forward:Cross(Vector3.yAxis)
+	if right.Magnitude < EPSILON then
+		right = forward:Cross(Vector3.xAxis)
+	end
+	right = right.Unit
+	local up = right:Cross(forward).Unit
+	for i = 0, segments do
+		local t = i / segments
+		local basePoint = startPoint:Lerp(endPoint, t)
+		local maxDisp = displacement * (1 - math.abs(t * 2 - 1))
+		local dx = MathUtils.perlin3(t * 10 + s, 0, 0) * maxDisp
+		local dy = MathUtils.perlin3(0, t * 10 + s, 0) * maxDisp
+		points[i + 1] = basePoint + right * dx + up * dy
+	end
+	points[1] = startPoint
+	points[segments + 1] = endPoint
+	return points
+end
+
+function MathUtils.curvatureAtPoint(splineFn: (number) -> Vector3, t: number, dt: number?): number
+	local eps = dt or 0.001
+	local t0 = math.max(t - eps, 0)
+	local t1 = t
+	local t2 = math.min(t + eps, 1)
+	local p0 = splineFn(t0)
+	local p1 = splineFn(t1)
+	local p2 = splineFn(t2)
+	local d1 = p1 - p0
+	local d2 = p2 - p1
+	local dd = d2 - d1
+	local d1Mag = d1.Magnitude
+	if d1Mag < EPSILON then return 0 end
+	local cross = d1:Cross(dd)
+	return cross.Magnitude / (d1Mag ^ 3)
+end
+
+function MathUtils.torsionAtPoint(splineFn: (number) -> Vector3, t: number, dt: number?): number
+	local eps = dt or 0.001
+	local t0 = math.max(t - eps, 0)
+	local t1 = t
+	local t2 = math.min(t + eps, 1)
+	local t3 = math.min(t + eps * 2, 1)
+	local p0 = splineFn(t0)
+	local p1 = splineFn(t1)
+	local p2 = splineFn(t2)
+	local p3 = splineFn(t3)
+	local d1 = p1 - p0
+	local d2 = p2 - p1
+	local d3 = p3 - p2
+	local dd1 = d2 - d1
+	local dd2 = d3 - d2
+	local cross = d1:Cross(dd1)
+	local crossMagSq = cross:Dot(cross)
+	if crossMagSq < EPSILON then return 0 end
+	return cross:Dot(dd2) / crossMagSq
+end
+
+function MathUtils.smoothMinPoly(a: number, b: number, k: number): number
+	local h = math.clamp(0.5 + 0.5 * (b - a) / math.max(k, EPSILON), 0, 1)
+	return a * h + b * (1 - h) - k * h * (1 - h)
+end
+
+function MathUtils.smoothMaxPoly(a: number, b: number, k: number): number
+	return -MathUtils.smoothMinPoly(-a, -b, k)
+end
+
+function MathUtils.smoothAbsPoly(x: number, k: number): number
+	return MathUtils.smoothMaxPoly(x, -x, k)
+end
+
+function MathUtils.smoothClampPoly(x: number, lo: number, hi: number, k: number): number
+	return MathUtils.smoothMinPoly(MathUtils.smoothMaxPoly(x, lo, k), hi, k)
+end
+
+function MathUtils.mapRange(value: number, inMin: number, inMax: number, outMin: number, outMax: number, clampResult: boolean?): number
+	local inRange = inMax - inMin
+	if math.abs(inRange) < EPSILON then return outMin end
+	local normalized = (value - inMin) / inRange
+	if clampResult then
+		normalized = math.clamp(normalized, 0, 1)
+	end
+	return outMin + normalized * (outMax - outMin)
+end
+
+function MathUtils.mapRangeEased(
+	value: number,
+	inMin: number,
+	inMax: number,
+	outMin: number,
+	outMax: number,
+	easing: (number) -> number
+): number
+	local inRange = inMax - inMin
+	if math.abs(inRange) < EPSILON then return outMin end
+	local normalized = math.clamp((value - inMin) / inRange, 0, 1)
+	local eased = easing(normalized)
+	return outMin + eased * (outMax - outMin)
+end
+
+function MathUtils.multiLerp(values: {number}, t: number): number
+	local n = #values
+	if n == 0 then return 0 end
+	if n == 1 then return values[1] end
+	local scaled = math.clamp(t, 0, 1) * (n - 1)
+	local idx = math.floor(scaled)
+	local frac = scaled - idx
+	local i1 = math.clamp(idx + 1, 1, n)
+	local i2 = math.clamp(idx + 2, 1, n)
+	return values[i1] + (values[i2] - values[i1]) * frac
+end
+
+function MathUtils.multiLerpVector3(values: {Vector3}, t: number): Vector3
+	local n = #values
+	if n == 0 then return Vector3.zero end
+	if n == 1 then return values[1] end
+	local scaled = math.clamp(t, 0, 1) * (n - 1)
+	local idx = math.floor(scaled)
+	local frac = scaled - idx
+	local i1 = math.clamp(idx + 1, 1, n)
+	local i2 = math.clamp(idx + 2, 1, n)
+	return values[i1]:Lerp(values[i2], frac)
+end
+
+function MathUtils.vectorSmoothDampV3(
+	current: Vector3,
+	target: Vector3,
+	velocity: Vector3,
+	smoothTime: number,
+	dt: number,
+	maxSpeed: number?
+): (Vector3, Vector3)
+	local resultX, velX = MathUtils.smoothDamp(current.X, target.X, velocity.X, smoothTime, dt, maxSpeed)
+	local resultY, velY = MathUtils.smoothDamp(current.Y, target.Y, velocity.Y, smoothTime, dt, maxSpeed)
+	local resultZ, velZ = MathUtils.smoothDamp(current.Z, target.Z, velocity.Z, smoothTime, dt, maxSpeed)
+	return Vector3.new(resultX, resultY, resultZ), Vector3.new(velX, velY, velZ)
+end
+
+function MathUtils.vectorSpringDampV3(
+	current: Vector3,
+	target: Vector3,
+	velocity: Vector3,
+	stiffness: number,
+	damping: number,
+	dt: number
+): (Vector3, Vector3)
+	local resultX, velX = MathUtils.springDamp(current.X, target.X, velocity.X, stiffness, damping, dt)
+	local resultY, velY = MathUtils.springDamp(current.Y, target.Y, velocity.Y, stiffness, damping, dt)
+	local resultZ, velZ = MathUtils.springDamp(current.Z, target.Z, velocity.Z, stiffness, damping, dt)
+	return Vector3.new(resultX, resultY, resultZ), Vector3.new(velX, velY, velZ)
+end
+
+function MathUtils.exponentialSmoothV3(
+	current: Vector3,
+	target: Vector3,
+	smoothness: number,
+	dt: number
+): Vector3
+	local alpha = 1 - math.exp(-math.max(smoothness, 0) * math.max(dt, 0))
+	return current:Lerp(target, alpha)
+end
+
+function MathUtils.exponentialSmoothCFrame(
+	current: CFrame,
+	target: CFrame,
+	smoothness: number,
+	dt: number
+): CFrame
+	local alpha = 1 - math.exp(-math.max(smoothness, 0) * math.max(dt, 0))
+	return current:Lerp(target, alpha)
+end
+
+function MathUtils.dualQuaternionFromPosRot(
+	px: number, py: number, pz: number,
+	qx: number, qy: number, qz: number, qw: number
+): (number, number, number, number, number, number, number, number)
+	local dw = -0.5 * (px * qx + py * qy + pz * qz)
+	local dx = 0.5 * (px * qw + py * qz - pz * qy)
+	local dy = 0.5 * (-px * qz + py * qw + pz * qx)
+	local dz = 0.5 * (px * qy - py * qx + pz * qw)
+	return qx, qy, qz, qw, dx, dy, dz, dw
+end
+
+function MathUtils.dualQuaternionToPos(
+	qx: number, qy: number, qz: number, qw: number,
+	dx: number, dy: number, dz: number, dw: number
+): (number, number, number)
+	local px = 2 * (-dw * qx + dx * qw - dy * qz + dz * qy)
+	local py = 2 * (-dw * qy + dx * qz + dy * qw - dz * qx)
+	local pz = 2 * (-dw * qz - dx * qy + dy * qx + dz * qw)
+	return px, py, pz
+end
+
+function MathUtils.dualQuaternionMultiply(
+	q1x: number, q1y: number, q1z: number, q1w: number,
+	d1x: number, d1y: number, d1z: number, d1w: number,
+	q2x: number, q2y: number, q2z: number, q2w: number,
+	d2x: number, d2y: number, d2z: number, d2w: number
+): (number, number, number, number, number, number, number, number)
+	local rqx, rqy, rqz, rqw = MathUtils.quaternionMultiply(q1x, q1y, q1z, q1w, q2x, q2y, q2z, q2w)
+	local dx1, dy1, dz1, dw1 = MathUtils.quaternionMultiply(q1x, q1y, q1z, q1w, d2x, d2y, d2z, d2w)
+	local dx2, dy2, dz2, dw2 = MathUtils.quaternionMultiply(d1x, d1y, d1z, d1w, q2x, q2y, q2z, q2w)
+	return rqx, rqy, rqz, rqw, dx1 + dx2, dy1 + dy2, dz1 + dz2, dw1 + dw2
+end
+
+function MathUtils.dualQuaternionSlerp(
+	q1x: number, q1y: number, q1z: number, q1w: number,
+	d1x: number, d1y: number, d1z: number, d1w: number,
+	q2x: number, q2y: number, q2z: number, q2w: number,
+	d2x: number, d2y: number, d2z: number, d2w: number,
+	t: number
+): (number, number, number, number, number, number, number, number)
+	local dot = q1x * q2x + q1y * q2y + q1z * q2z + q1w * q2w
+	if dot < 0 then
+		q2x, q2y, q2z, q2w = -q2x, -q2y, -q2z, -q2w
+		d2x, d2y, d2z, d2w = -d2x, -d2y, -d2z, -d2w
+	end
+	local rqx, rqy, rqz, rqw = MathUtils.quaternionSlerp(q1x, q1y, q1z, q1w, q2x, q2y, q2z, q2w, t)
+	local rdx = d1x + (d2x - d1x) * t
+	local rdy = d1y + (d2y - d1y) * t
+	local rdz = d1z + (d2z - d1z) * t
+	local rdw = d1w + (d2w - d1w) * t
+	return rqx, rqy, rqz, rqw, rdx, rdy, rdz, rdw
+end
+
+function MathUtils.quaternionExp(
+	qx: number, qy: number, qz: number, qw: number
+): (number, number, number, number)
+	local vecMag = math.sqrt(qx * qx + qy * qy + qz * qz)
+	local expW = math.exp(qw)
+	if vecMag < EPSILON then
+		return 0, 0, 0, expW
+	end
+	local s = expW * math.sin(vecMag) / vecMag
+	return qx * s, qy * s, qz * s, expW * math.cos(vecMag)
+end
+
+function MathUtils.quaternionLog(
+	qx: number, qy: number, qz: number, qw: number
+): (number, number, number, number)
+	local qMag = math.sqrt(qx * qx + qy * qy + qz * qz + qw * qw)
+	local vecMag = math.sqrt(qx * qx + qy * qy + qz * qz)
+	if vecMag < EPSILON then
+		return 0, 0, 0, math.log(math.max(qMag, EPSILON))
+	end
+	local theta = math.acos(math.clamp(qw / qMag, -1, 1))
+	local s = theta / vecMag
+	return qx * s, qy * s, qz * s, math.log(math.max(qMag, EPSILON))
+end
+
+function MathUtils.quaternionPow(
+	qx: number, qy: number, qz: number, qw: number,
+	power: number
+): (number, number, number, number)
+	local lx, ly, lz, lw = MathUtils.quaternionLog(qx, qy, qz, qw)
+	return MathUtils.quaternionExp(lx * power, ly * power, lz * power, lw * power)
+end
+
+function MathUtils.quaternionSquad(
+	q1x: number, q1y: number, q1z: number, q1w: number,
+	q2x: number, q2y: number, q2z: number, q2w: number,
+	s1x: number, s1y: number, s1z: number, s1w: number,
+	s2x: number, s2y: number, s2z: number, s2w: number,
+	t: number
+): (number, number, number, number)
+	local ax, ay, az, aw = MathUtils.quaternionSlerp(q1x, q1y, q1z, q1w, q2x, q2y, q2z, q2w, t)
+	local bx, by, bz, bw = MathUtils.quaternionSlerp(s1x, s1y, s1z, s1w, s2x, s2y, s2z, s2w, t)
+	return MathUtils.quaternionSlerp(ax, ay, az, aw, bx, by, bz, bw, 2 * t * (1 - t))
+end
+
+function MathUtils.quaternionSwingTwist(
+	qx: number, qy: number, qz: number, qw: number,
+	twistAxis: Vector3
+): (number, number, number, number, number, number, number, number)
+	local axis = if twistAxis.Magnitude > EPSILON then twistAxis.Unit else Vector3.yAxis
+	local projection = Vector3.new(qx, qy, qz):Dot(axis)
+	local twistQx = axis.X * projection
+	local twistQy = axis.Y * projection
+	local twistQz = axis.Z * projection
+	local twistQw = qw
+	local twistMag = math.sqrt(twistQx * twistQx + twistQy * twistQy + twistQz * twistQz + twistQw * twistQw)
+	if twistMag < EPSILON then
+		return 0, 0, 0, 1, qx, qy, qz, qw
+	end
+	twistQx /= twistMag
+	twistQy /= twistMag
+	twistQz /= twistMag
+	twistQw /= twistMag
+	local conjTx, conjTy, conjTz, conjTw = -twistQx, -twistQy, -twistQz, twistQw
+	local swingQx, swingQy, swingQz, swingQw = MathUtils.quaternionMultiply(qx, qy, qz, qw, conjTx, conjTy, conjTz, conjTw)
+	return twistQx, twistQy, twistQz, twistQw, swingQx, swingQy, swingQz, swingQw
+end
+
+
+
+export type Complex = {
+	r: number,
+	i: number,
+}
+
+function MathUtils.complexNew(real: number, imaginary: number): Complex
+	return { r = real, i = imaginary }
+end
+
+function MathUtils.complexAdd(a: Complex, b: Complex): Complex
+	return { r = a.r + b.r, i = a.i + b.i }
+end
+
+function MathUtils.complexSubtract(a: Complex, b: Complex): Complex
+	return { r = a.r - b.r, i = a.i - b.i }
+end
+
+function MathUtils.complexMultiply(a: Complex, b: Complex): Complex
+	return { r = a.r * b.r - a.i * b.i, i = a.r * b.i + a.i * b.r }
+end
+
+function MathUtils.complexDivide(a: Complex, b: Complex): Complex
+	local denom = b.r * b.r + b.i * b.i
+	if denom < EPSILON then return { r = 0, i = 0 } end
+	return { r = (a.r * b.r + a.i * b.i) / denom, i = (a.i * b.r - a.r * b.i) / denom }
+end
+
+function MathUtils.complexMagnitude(c: Complex): number
+	return math.sqrt(c.r * c.r + c.i * c.i)
+end
+
+function MathUtils.complexPhase(c: Complex): number
+	return math.atan2(c.i, c.r)
+end
+
+function MathUtils.complexConjugate(c: Complex): Complex
+	return { r = c.r, i = -c.i }
+end
+
+function MathUtils.complexExp(c: Complex): Complex
+	local expR = math.exp(c.r)
+	return { r = expR * math.cos(c.i), i = expR * math.sin(c.i) }
+end
+
+function MathUtils.complexLog(c: Complex): Complex
+	return { r = math.log(MathUtils.complexMagnitude(c)), i = MathUtils.complexPhase(c) }
+end
+
+function MathUtils.complexPow(base: Complex, exponent: Complex): Complex
+	return MathUtils.complexExp(MathUtils.complexMultiply(exponent, MathUtils.complexLog(base)))
+end
+
+function MathUtils.complexSin(c: Complex): Complex
+	return { r = math.sin(c.r) * math.cosh(c.i), i = math.cos(c.r) * math.sinh(c.i) }
+end
+
+function MathUtils.complexCos(c: Complex): Complex
+	return { r = math.cos(c.r) * math.cosh(c.i), i = -math.sin(c.r) * math.sinh(c.i) }
+end
+
+function MathUtils.complexTan(c: Complex): Complex
+	return MathUtils.complexDivide(MathUtils.complexSin(c), MathUtils.complexCos(c))
+end
+
+function MathUtils.mandelbrotEscape(c: Complex, maxIter: number): number
+	local z = { r = 0, i = 0 }
+	for i = 1, maxIter do
+		local r2 = z.r * z.r
+		local i2 = z.i * z.i
+		if r2 + i2 > 4 then
+			return i
+		end
+		z.i = 2 * z.r * z.i + c.i
+		z.r = r2 - i2 + c.r
+	end
+	return maxIter
+end
+
+function MathUtils.juliaEscape(z: Complex, c: Complex, maxIter: number): number
+	for i = 1, maxIter do
+		local r2 = z.r * z.r
+		local i2 = z.i * z.i
+		if r2 + i2 > 4 then
+			return i
+		end
+		z.i = 2 * z.r * z.i + c.i
+		z.r = r2 - i2 + c.r
+	end
+	return maxIter
+end
+
+function MathUtils.convolutionFFT(a: {number}, b: {number}): {number}
+	local n: number = MathUtils.nextPowerOfTwo(#a + #b - 1)
+	local complexA: {ComplexNumber} = {}
+	local complexB: {ComplexNumber} = {}
+	for i: number = 1, n do
+		complexA[i] = {re = a[i] or 0, im = 0}
+		complexB[i] = {re = b[i] or 0, im = 0}
+	end
+	local fA: {ComplexNumber} = MathUtils.fft(complexA)
+	local fB: {ComplexNumber} = MathUtils.fft(complexB)
+	local c: {ComplexNumber} = {}
+	for i: number = 1, n do
+		c[i] = {
+			re = fA[i].re * fB[i].re - fA[i].im * fB[i].im,
+			im = fA[i].re * fB[i].im + fA[i].im * fB[i].re
+		}
+	end
+	local res: {ComplexNumber} = MathUtils.ifft(c)
+	local finalResult: {number} = {}
+	for i: number = 1, #a + #b - 1 do
+		finalResult[i] = res[i].re
+	end
+	return finalResult
+end
+
+function MathUtils.bigIntAdd(a: string, b: string): string
+	local res = ""
+	local carry = 0
+	local i = #a
+	local j = #b
+	while i > 0 or j > 0 or carry > 0 do
+		local sum = carry
+		if i > 0 then
+			sum += tonumber(string.sub(a, i, i)) or 0
+			i -= 1
+		end
+		if j > 0 then
+			sum += tonumber(string.sub(b, j, j)) or 0
+			j -= 1
+		end
+		carry = math.floor(sum / 10)
+		res = tostring(sum % 10) .. res
+	end
+	return res == "" and "0" or res
+end
+
+function MathUtils.bigIntSubtract(a: string, b: string): string
+	if a == b then return "0" end
+	local res = ""
+	local borrow = 0
+	local i = #a
+	local j = #b
+	while i > 0 do
+		local diff = (tonumber(string.sub(a, i, i)) or 0) - borrow
+		if j > 0 then
+			diff -= tonumber(string.sub(b, j, j)) or 0
+			j -= 1
+		end
+		if diff < 0 then
+			diff += 10
+			borrow = 1
+		else
+			borrow = 0
+		end
+		res = tostring(diff) .. res
+		i -= 1
+	end
+	res = string.gsub(res, "^0+", "")
+	return res == "" and "0" or res
+end
+
+function MathUtils.bigIntMultiply(a: string, b: string): string
+	if a == "0" or b == "0" then return "0" end
+	local n = #a
+	local m = #b
+	local vals: {number} = table.create(n + m, 0)
+	for i = n, 1, -1 do
+		local digitA = tonumber(string.sub(a, i, i)) or 0
+		for j = m, 1, -1 do
+			local digitB = tonumber(string.sub(b, j, j)) or 0
+			local prod = digitA * digitB
+			local p1 = i + j - 1
+			local p2 = i + j
+			local sum = prod + vals[p2]
+			vals[p2] = sum % 10
+			vals[p1] += math.floor(sum / 10)
+		end
+	end
+	local res = ""
+	for i = 1, #vals do
+		res ..= tostring(vals[i])
+	end
+	res = string.gsub(res, "^0+", "")
+	return res == "" and "0" or res
+end
+
+function MathUtils.bigIntCompare(a: string, b: string): number
+	local lenA = #a
+	local lenB = #b
+	if lenA > lenB then return 1 end
+	if lenA < lenB then return -1 end
+	for i = 1, lenA do
+		local da = string.byte(a, i, i)
+		local db = string.byte(b, i, i)
+		if da > db then return 1 end
+		if da < db then return -1 end
+	end
+	return 0
+end
+
+function MathUtils.cellularAutomataCave(width: number, height: number, fillProb: number, iterations: number, seed: number?): {{boolean}}
+	local s = seed or 0
+	local grid: {{boolean}} = {}
+	for y = 1, height do
+		grid[y] = {}
+		for x = 1, width do
+			if x == 1 or x == width or y == 1 or y == height then
+				grid[y][x] = true
+			else
+				grid[y][x] = MathUtils.hashToUnit01(x + y * width + s) < fillProb
+			end
+		end
+	end
+	for _ = 1, iterations do
+		local newGrid: {{boolean}} = {}
+		for y = 1, height do
+			newGrid[y] = {}
+			for x = 1, width do
+				local neighbors = 0
+				for dy = -1, 1 do
+					for dx = -1, 1 do
+						if dx == 0 and dy == 0 then continue end
+						local nx = x + dx
+						local ny = y + dy
+						if nx < 1 or nx > width or ny < 1 or ny > height then
+							neighbors += 1
+						elseif grid[ny][nx] then
+							neighbors += 1
+						end
+					end
+				end
+				if neighbors > 4 then
+					newGrid[y][x] = true
+				elseif neighbors < 4 then
+					newGrid[y][x] = false
+				else
+					newGrid[y][x] = grid[y][x]
+				end
+			end
+		end
+		grid = newGrid
+	end
+	return grid
+end
+
+function MathUtils.diamondSquare(size: number, roughness: number, seed: number?): {{number}}
+	local s = seed or 0
+	if not MathUtils.isPowerOfTwo(size - 1) then
+		return {}
+	end
+	local map: {{number}} = {}
+	for y = 1, size do
+		map[y] = {}
+		for x = 1, size do
+			map[y][x] = 0
+		end
+	end
+	map[1][1] = MathUtils.hashToUnit01(s)
+	map[1][size] = MathUtils.hashToUnit01(s + 1)
+	map[size][1] = MathUtils.hashToUnit01(s + 2)
+	map[size][size] = MathUtils.hashToUnit01(s + 3)
+	local stepSize = size - 1
+	local scale = roughness
+	local idx = 0
+	while stepSize > 1 do
+		local halfStep = math.floor(stepSize / 2)
+		for y = 1, size - 1, stepSize do
+			for x = 1, size - 1, stepSize do
+				local a = map[y][x]
+				local b = map[y][x + stepSize]
+				local c = map[y + stepSize][x]
+				local d = map[y + stepSize][x + stepSize]
+				local avg = (a + b + c + d) / 4
+				idx += 1
+				local offset = (MathUtils.hashToUnit01(s + 100 + idx) * 2 - 1) * scale
+				map[y + halfStep][x + halfStep] = avg + offset
+			end
+		end
+		for y = 1, size, halfStep do
+			for x = (if (y - 1) % stepSize == 0 then 1 + halfStep else 1), size, stepSize do
+				local sum = 0
+				local count = 0
+				if x > halfStep then sum += map[y][x - halfStep]; count += 1 end
+				if x + halfStep <= size then sum += map[y][x + halfStep]; count += 1 end
+				if y > halfStep then sum += map[y - halfStep][x]; count += 1 end
+				if y + halfStep <= size then sum += map[y + halfStep][x]; count += 1 end
+				idx += 1
+				local offset = (MathUtils.hashToUnit01(s + 1000 + idx) * 2 - 1) * scale
+				map[y][x] = sum / count + offset
+			end
+		end
+		stepSize = halfStep
+		scale *= 0.5
+	end
+	return map
+end
+
+export type VoronoiPoint = {
+	position: Vector2,
+	color: number,
+}
+
+function MathUtils.voronoiNoise2D(x: number, y: number, points: {VoronoiPoint}): (number, number)
+	local minDist = math.huge
+	local closestColor = 0
+	local p = Vector2.new(x, y)
+	for _, pt in ipairs(points) do
+		local dist = (p - pt.position).Magnitude
+		if dist < minDist then
+			minDist = dist
+			closestColor = pt.color
+		end
+	end
+	return minDist, closestColor
+end
+
+function MathUtils.worleyNoise3D(x: number, y: number, z: number, seed: number?): (number, number)
+	local s = seed or 0
+	local ix = math.floor(x)
+	local iy = math.floor(y)
+	local iz = math.floor(z)
+	local d1 = math.huge
+	local d2 = math.huge
+	for k = -1, 1 do
+		for j = -1, 1 do
+			for i = -1, 1 do
+				local cx = ix + i
+				local cy = iy + j
+				local cz = iz + k
+				local px = cx + MathUtils.hashToUnit01(cx * 13 + cy * 29 + cz * 47 + s)
+				local py = cy + MathUtils.hashToUnit01(cx * 17 + cy * 31 + cz * 53 + s)
+				local pz = cz + MathUtils.hashToUnit01(cx * 19 + cy * 37 + cz * 59 + s)
+				local dx = px - x
+				local dy = py - y
+				local dz = pz - z
+				local distSq = dx * dx + dy * dy + dz * dz
+				if distSq < d1 then
+					d2 = d1
+					d1 = distSq
+				elseif distSq < d2 then
+					d2 = distSq
+				end
+			end
+		end
+	end
+	return math.sqrt(d1), math.sqrt(d2)
+end
+
+function MathUtils.rayIntersectAABB(rayOrigin: Vector3, rayDir: Vector3, boxMin: Vector3, boxMax: Vector3): (boolean, number, number)
+	local invDir = Vector3.new(
+		math.abs(rayDir.X) > EPSILON and 1 / rayDir.X or math.huge,
+		math.abs(rayDir.Y) > EPSILON and 1 / rayDir.Y or math.huge,
+		math.abs(rayDir.Z) > EPSILON and 1 / rayDir.Z or math.huge
+	)
+	local t0 = (boxMin - rayOrigin) * invDir
+	local t1 = (boxMax - rayOrigin) * invDir
+	local tminX = math.min(t0.X, t1.X)
+	local tmaxX = math.max(t0.X, t1.X)
+	local tminY = math.min(t0.Y, t1.Y)
+	local tmaxY = math.max(t0.Y, t1.Y)
+	local tminZ = math.min(t0.Z, t1.Z)
+	local tmaxZ = math.max(t0.Z, t1.Z)
+	local tmin = math.max(tminX, tminY, tminZ)
+	local tmax = math.min(tmaxX, tmaxY, tmaxZ)
+	if tmax >= tmin and tmax >= 0 then
+		return true, tmin, tmax
+	end
+	return false, 0, 0
+end
+
+function MathUtils.voxelTraversal(
+	rayOrigin: Vector3,
+	rayDir: Vector3,
+	voxelSize: number,
+	maxDist: number,
+	visitFn: (number, number, number) -> boolean
+)
+	local stepX = math.sign(rayDir.X)
+	local stepY = math.sign(rayDir.Y)
+	local stepZ = math.sign(rayDir.Z)
+	if stepX == 0 then stepX = 1 end
+	if stepY == 0 then stepY = 1 end
+	if stepZ == 0 then stepZ = 1 end
+	local tDeltaX = if math.abs(rayDir.X) > EPSILON then voxelSize / math.abs(rayDir.X) else math.huge
+	local tDeltaY = if math.abs(rayDir.Y) > EPSILON then voxelSize / math.abs(rayDir.Y) else math.huge
+	local tDeltaZ = if math.abs(rayDir.Z) > EPSILON then voxelSize / math.abs(rayDir.Z) else math.huge
+	local vx = math.floor(rayOrigin.X / voxelSize)
+	local vy = math.floor(rayOrigin.Y / voxelSize)
+	local vz = math.floor(rayOrigin.Z / voxelSize)
+	local nextVx = vx + (if stepX > 0 then 1 else 0)
+	local nextVy = vy + (if stepY > 0 then 1 else 0)
+	local nextVz = vz + (if stepZ > 0 then 1 else 0)
+	local tMaxX = if math.abs(rayDir.X) > EPSILON then (nextVx * voxelSize - rayOrigin.X) / rayDir.X else math.huge
+	local tMaxY = if math.abs(rayDir.Y) > EPSILON then (nextVy * voxelSize - rayOrigin.Y) / rayDir.Y else math.huge
+	local tMaxZ = if math.abs(rayDir.Z) > EPSILON then (nextVz * voxelSize - rayOrigin.Z) / rayDir.Z else math.huge
+	local dist = 0
+	while dist <= maxDist do
+		if visitFn(vx, vy, vz) then
+			return true
+		end
+		if tMaxX < tMaxY then
+			if tMaxX < tMaxZ then
+				vx += stepX
+				dist = tMaxX
+				tMaxX += tDeltaX
+			else
+				vz += stepZ
+				dist = tMaxZ
+				tMaxZ += tDeltaZ
+			end
+		else
+			if tMaxY < tMaxZ then
+				vy += stepY
+				dist = tMaxY
+				tMaxY += tDeltaY
+			else
+				vz += stepZ
+				dist = tMaxZ
+				tMaxZ += tDeltaZ
+			end
+		end
+	end
+	return false
+end
+
+function MathUtils.triangulateEarClipping(vertices: {Vector2}): {number}
+	local n = #vertices
+	if n < 3 then return {} end
+	local indices: {number} = {}
+	local V: {number} = {}
+	local area = MathUtils.polygonArea2D(vertices)
+	if area > 0 then
+		for i = 1, n do V[i] = i end
+	else
+		for i = 1, n do V[i] = n - i + 1 end
+	end
+	local nv = n
+	local count = 2 * nv
+	local m = 1
+	local v = nv
+	while nv > 2 do
+		if count <= 0 then return indices end
+		local u = v
+		if nv <= u then u = 1 end
+		v = u + 1
+		if nv <= v then v = 1 end
+		local w = v + 1
+		if nv <= w then w = 1 end
+		local p0 = vertices[V[u]]
+		local p1 = vertices[V[v]]
+		local p2 = vertices[V[w]]
+		local ear = true
+		local ax, ay = p0.X, p0.Y
+		local bx, by = p1.X, p1.Y
+		local cx, cy = p2.X, p2.Y
+		local eps = 0.00001
+		if (bx - ax) * (cy - ay) - (by - ay) * (cx - ax) < eps then
+			ear = false
+		else
+			for p = 1, nv do
+				if p == u or p == v or p == w then continue end
+				local pt = vertices[V[p]]
+				local px, py = pt.X, pt.Y
+				local d0 = (bx - ax) * (py - ay) - (by - ay) * (px - ax)
+				local d1 = (cx - bx) * (py - by) - (cy - by) * (px - bx)
+				local d2 = (ax - cx) * (py - cy) - (ay - cy) * (px - cx)
+				if d0 >= -eps and d1 >= -eps and d2 >= -eps then
+					ear = false
+					break
+				end
+			end
+		end
+		if ear then
+			table.insert(indices, V[u])
+			table.insert(indices, V[v])
+			table.insert(indices, V[w])
+			for s = v, nv - 1 do
+				V[s] = V[s + 1]
+			end
+			nv -= 1
+			count = 2 * nv
+		else
+			count -= 1
+		end
+	end
+	return indices
+end
+
+function MathUtils.convexHull3DGiftWrapping(points: {Vector3}): {{number}}
+	local n = #points
+	if n < 4 then return {} end
+	local lowest = 1
+	for i = 2, n do
+		if points[i].Y < points[lowest].Y then
+			lowest = i
+		end
+	end
+	local faces: {{number}} = {}
+	return faces
+end
+
+function MathUtils.polygonBooleanIntersection(poly1: {Vector2}, poly2: {Vector2}): {Vector2}
+	local outputList = poly1
+	for i = 1, #poly2 do
+		local clipEdgeStart = poly2[i]
+		local clipEdgeEnd = poly2[(i % #poly2) + 1]
+		local inputList = outputList
+		outputList = {}
+		if #inputList == 0 then break end
+		local s = inputList[#inputList]
+		for j = 1, #inputList do
+			local e = inputList[j]
+			local dxC = clipEdgeEnd.X - clipEdgeStart.X
+			local dyC = clipEdgeEnd.Y - clipEdgeStart.Y
+			local insideE = (e.X - clipEdgeStart.X) * dyC - (e.Y - clipEdgeStart.Y) * dxC <= 0
+			local insideS = (s.X - clipEdgeStart.X) * dyC - (s.Y - clipEdgeStart.Y) * dxC <= 0
+			if insideE then
+				if not insideS then
+					local dxE = e.X - s.X
+					local dyE = e.Y - s.Y
+					local det = dxC * dyE - dyC * dxE
+					if math.abs(det) > EPSILON then
+						local t = ((s.X - clipEdgeStart.X) * dyC - (s.Y - clipEdgeStart.Y) * dxC) / det
+						local intersect = Vector2.new(s.X + t * dxE, s.Y + t * dyE)
+						table.insert(outputList, intersect)
+					end
+				end
+				table.insert(outputList, e)
+			elseif insideS then
+				local dxE = e.X - s.X
+				local dyE = e.Y - s.Y
+				local det = dxC * dyE - dyC * dxE
+				if math.abs(det) > EPSILON then
+					local t = ((s.X - clipEdgeStart.X) * dyC - (s.Y - clipEdgeStart.Y) * dxC) / det
+					local intersect = Vector2.new(s.X + t * dxE, s.Y + t * dyE)
+					table.insert(outputList, intersect)
+				end
+			end
+			s = e
+		end
+	end
+	return outputList
+end
+
+function MathUtils.createSpatialHash3D(cellSize: number): any
+	return {
+		cellSize = cellSize,
+		grid = {} :: {[string]: {any}},
+
+		hash = function(self: any, point: Vector3): string
+			local x = math.floor(point.X / self.cellSize)
+			local y = math.floor(point.Y / self.cellSize)
+			local z = math.floor(point.Z / self.cellSize)
+			return x .. "," .. y .. "," .. z
+		end,
+
+		insert = function(self: any, obj: any, minBound: Vector3, maxBound: Vector3)
+			local minX = math.floor(minBound.X / self.cellSize)
+			local maxX = math.floor(maxBound.X / self.cellSize)
+			local minY = math.floor(minBound.Y / self.cellSize)
+			local maxY = math.floor(maxBound.Y / self.cellSize)
+			local minZ = math.floor(minBound.Z / self.cellSize)
+			local maxZ = math.floor(maxBound.Z / self.cellSize)
+
+			for x = minX, maxX do
+				for y = minY, maxY do
+					for z = minZ, maxZ do
+						local key = x .. "," .. y .. "," .. z
+						if not self.grid[key] then
+							self.grid[key] = {}
+						end
+						table.insert(self.grid[key], obj)
+					end
+				end
+			end
+		end,
+
+		query = function(self: any, minBound: Vector3, maxBound: Vector3): {any}
+			local result = {}
+			local seen = {}
+			local minX = math.floor(minBound.X / self.cellSize)
+			local maxX = math.floor(maxBound.X / self.cellSize)
+			local minY = math.floor(minBound.Y / self.cellSize)
+			local maxY = math.floor(maxBound.Y / self.cellSize)
+			local minZ = math.floor(minBound.Z / self.cellSize)
+			local maxZ = math.floor(maxBound.Z / self.cellSize)
+
+			for x = minX, maxX do
+				for y = minY, maxY do
+					for z = minZ, maxZ do
+						local key = x .. "," .. y .. "," .. z
+						local cell = self.grid[key]
+						if cell then
+							for _, obj in ipairs(cell) do
+								if not seen[obj] then
+									seen[obj] = true
+									table.insert(result, obj)
+								end
+							end
+						end
+					end
+				end
+			end
+			return result
+		end,
+
+		clear = function(self: any)
+			self.grid = {}
+		end
+	}
+end
+
+function MathUtils.rayIntersectsTriangle(
+	rayOrigin: Vector3,
+	rayDir: Vector3,
+	v0: Vector3,
+	v1: Vector3,
+	v2: Vector3,
+	cullBackFace: boolean?
+): (boolean, number, number, number)
+	local e1 = v1 - v0
+	local e2 = v2 - v0
+	local pvec = rayDir:Cross(e2)
+	local det = e1:Dot(pvec)
+	if cullBackFace then
+		if det < EPSILON then return false, 0, 0, 0 end
+	else
+		if math.abs(det) < EPSILON then return false, 0, 0, 0 end
+	end
+	local invDet = 1 / det
+	local tvec = rayOrigin - v0
+	local u = tvec:Dot(pvec) * invDet
+	if u < 0 or u > 1 then return false, 0, 0, 0 end
+	local qvec = tvec:Cross(e1)
+	local v = rayDir:Dot(qvec) * invDet
+	if v < 0 or u + v > 1 then return false, 0, 0, 0 end
+	local t = e2:Dot(qvec) * invDet
+	if t > EPSILON then
+		return true, t, u, v
+	end
+	return false, 0, 0, 0
+end
+
+function MathUtils.closestPointOnTriangle3D(
+	p: Vector3,
+	a: Vector3,
+	b: Vector3,
+	c: Vector3
+): Vector3
+	local ab = b - a
+	local ac = c - a
+	local ap = p - a
+	local d1 = ab:Dot(ap)
+	local d2 = ac:Dot(ap)
+	if d1 <= 0 and d2 <= 0 then return a end
+	local bp = p - b
+	local d3 = ab:Dot(bp)
+	local d4 = ac:Dot(bp)
+	if d3 >= 0 and d4 <= d3 then return b end
+	local vc = d1 * d4 - d3 * d2
+	if vc <= 0 and d1 >= 0 and d3 <= 0 then
+		local v = d1 / (d1 - d3)
+		return a + ab * v
+	end
+	local cp = p - c
+	local d5 = ab:Dot(cp)
+	local d6 = ac:Dot(cp)
+	if d6 >= 0 and d5 <= d6 then return c end
+	local vb = d5 * d2 - d1 * d6
+	if vb <= 0 and d2 >= 0 and d6 <= 0 then
+		local w = d2 / (d2 - d6)
+		return a + ac * w
+	end
+	local va = d3 * d6 - d5 * d4
+	if va <= 0 and (d4 - d3) >= 0 and (d5 - d6) >= 0 then
+		local w = (d4 - d3) / ((d4 - d3) + (d5 - d6))
+		return b + (c - b) * w
+	end
+	local denom = 1 / (va + vb + vc)
+	local v = vb * denom
+	local w = vc * denom
+	return a + ab * v + ac * w
+end
+
+function MathUtils.matrixLookAt3x3(
+	eye: Vector3,
+	target: Vector3,
+	up: Vector3
+): {number}
+	local zaxis = (eye - target).Unit
+	local xaxis = up:Cross(zaxis).Unit
+	local yaxis = zaxis:Cross(xaxis)
+	return {
+		xaxis.X, xaxis.Y, xaxis.Z,
+		yaxis.X, yaxis.Y, yaxis.Z,
+		zaxis.X, zaxis.Y, zaxis.Z
+	}
+end
+
+function MathUtils.matrixOrthographic(
+	left: number, right: number,
+	bottom: number, top: number,
+	near: number, far: number
+): {number}
+	local rml = right - left
+	local tmb = top - bottom
+	local fmn = far - near
+	return {
+		2 / rml, 0, 0, -(right + left) / rml,
+		0, 2 / tmb, 0, -(top + bottom) / tmb,
+		0, 0, -2 / fmn, -(far + near) / fmn,
+		0, 0, 0, 1
+	}
+end
+
+function MathUtils.matrixPerspective(
+	fovY: number, aspect: number,
+	near: number, far: number
+): {number}
+	local f = 1 / math.tan(math.rad(fovY) / 2)
+	local fmn = near - far
+	return {
+		f / aspect, 0, 0, 0,
+		0, f, 0, 0,
+		0, 0, (far + near) / fmn, (2 * far * near) / fmn,
+		0, 0, -1, 0
+	}
+end
+
+function MathUtils.sphericalToCartesian(radius: number, theta: number, phi: number): Vector3
+	local sinPhi = math.sin(phi)
+	return Vector3.new(
+		radius * sinPhi * math.cos(theta),
+		radius * math.cos(phi),
+		radius * sinPhi * math.sin(theta)
+	)
+end
+
+function MathUtils.cartesianToSpherical(pos: Vector3): (number, number, number)
+	local radius = pos.Magnitude
+	if radius < EPSILON then return 0, 0, 0 end
+	local theta = math.atan2(pos.Z, pos.X)
+	local phi = math.acos(math.clamp(pos.Y / radius, -1, 1))
+	return radius, theta, phi
+end
+
+function MathUtils.cylindricalToCartesian(radius: number, theta: number, y: number): Vector3
+	return Vector3.new(
+		radius * math.cos(theta),
+		y,
+		radius * math.sin(theta)
+	)
+end
+
+function MathUtils.cartesianToCylindrical(pos: Vector3): (number, number, number)
+	local radius = math.sqrt(pos.X * pos.X + pos.Z * pos.Z)
+	local theta = math.atan2(pos.Z, pos.X)
+	return radius, theta, pos.Y
+end
+
+function MathUtils.randomPointInTorus(majorRadius: number, minorRadius: number): Vector3
+	local theta = math.random() * TWO_PI
+	local phi = math.random() * TWO_PI
+	local r = math.sqrt(math.random()) * minorRadius
+	local center = Vector3.new(math.cos(theta) * majorRadius, 0, math.sin(theta) * majorRadius)
+	local offset = Vector3.new(
+		math.cos(theta) * math.cos(phi) * r,
+		math.sin(phi) * r,
+		math.sin(theta) * math.cos(phi) * r
+	)
+	return center + offset
+end
+
+function MathUtils.goldenRatioConjugate(): number
+	return 0.618033988749895
+end
+
+function MathUtils.fibonacciSphere(n: number, index: number): Vector3
+	local phi = math.acos(1 - 2 * (index + 0.5) / n)
+	local theta = TWO_PI * index / 1.618033988749895
+	return MathUtils.sphericalToCartesian(1, theta, phi)
+end
+
+function MathUtils.smoothStepDerivative(edge0: number, edge1: number, x: number): number
+	local t = math.clamp((x - edge0) / (edge1 - edge0), 0, 1)
+	return 6 * t * (1 - t) / (edge1 - edge0)
+end
+
+function MathUtils.smootherStepDerivative(edge0: number, edge1: number, x: number): number
+	local t = math.clamp((x - edge0) / (edge1 - edge0), 0, 1)
+	return 30 * t * t * (t * (t - 2) + 1) / (edge1 - edge0)
+end
+
+
+function MathUtils.matrix4x4Identity(): {number}
+	return {
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0, 1
+	}
+end
+
+function MathUtils.matrix4x4Multiply(a: {number}, b: {number}): {number}
+	local res = {}
+	for i = 0, 3 do
+		for j = 1, 4 do
+			local sum = 0
+			for k = 1, 4 do
+				sum += a[i * 4 + k] * b[(k - 1) * 4 + j]
+			end
+			res[i * 4 + j] = sum
+		end
+	end
+	return res
+end
+
+function MathUtils.matrix4x4Inverse(m: {number}): {number}?
+	local inv = {}
+	inv[1] = m[6]  * m[11] * m[16] - m[6]  * m[12] * m[15] - m[10] * m[7]  * m[16] + m[10] * m[8]  * m[15] + m[14] * m[7]  * m[12] - m[14] * m[8]  * m[11]
+	inv[5] = -m[5]  * m[11] * m[16] + m[5]  * m[12] * m[15] + m[9]  * m[7]  * m[16] - m[9]  * m[8]  * m[15] - m[13] * m[7]  * m[12] + m[13] * m[8]  * m[11]
+	inv[9] = m[5]  * m[10] * m[16] - m[5]  * m[12] * m[14] - m[9]  * m[6]  * m[16] + m[9]  * m[8]  * m[14] + m[13] * m[6]  * m[12] - m[13] * m[8]  * m[10]
+	inv[13] = -m[5]  * m[10] * m[15] + m[5]  * m[11] * m[14] + m[9]  * m[6]  * m[15] - m[9]  * m[7]  * m[14] - m[13] * m[6]  * m[11] + m[13] * m[7]  * m[10]
+	inv[2] = -m[2]  * m[11] * m[16] + m[2]  * m[12] * m[15] + m[10] * m[3]  * m[16] - m[10] * m[4]  * m[15] - m[14] * m[3]  * m[12] + m[14] * m[4]  * m[11]
+	inv[6] = m[1]  * m[11] * m[16] - m[1]  * m[12] * m[15] - m[9]  * m[3]  * m[16] + m[9]  * m[4]  * m[15] + m[13] * m[3]  * m[12] - m[13] * m[4]  * m[11]
+	inv[10] = -m[1]  * m[10] * m[16] + m[1]  * m[12] * m[14] + m[9]  * m[2]  * m[16] - m[9]  * m[4]  * m[14] - m[13] * m[2]  * m[12] + m[13] * m[4]  * m[10]
+	inv[14] = m[1]  * m[10] * m[15] - m[1]  * m[11] * m[14] - m[9]  * m[2]  * m[15] + m[9]  * m[3]  * m[14] + m[13] * m[2]  * m[11] - m[13] * m[3]  * m[10]
+	inv[3] = m[2]  * m[7]  * m[16] - m[2]  * m[8]  * m[15] - m[6]  * m[3]  * m[16] + m[6]  * m[4]  * m[15] + m[14] * m[3]  * m[8]  - m[14] * m[4]  * m[7]
+	inv[7] = -m[1]  * m[7]  * m[16] + m[1]  * m[8]  * m[15] + m[5]  * m[3]  * m[16] - m[5]  * m[4]  * m[15] - m[13] * m[3]  * m[8]  + m[13] * m[4]  * m[7]
+	inv[11] = m[1]  * m[6]  * m[16] - m[1]  * m[8]  * m[14] - m[5]  * m[2]  * m[16] + m[5]  * m[4]  * m[14] + m[13] * m[2]  * m[8]  - m[13] * m[4]  * m[6]
+	inv[15] = -m[1]  * m[6]  * m[15] + m[1]  * m[7]  * m[14] + m[5]  * m[2]  * m[15] - m[5]  * m[3]  * m[14] - m[13] * m[2]  * m[7]  + m[13] * m[3]  * m[6]
+	inv[4] = -m[2]  * m[7]  * m[12] + m[2]  * m[8]  * m[11] + m[6]  * m[3]  * m[12] - m[6]  * m[4]  * m[11] - m[10] * m[3]  * m[8]  + m[10] * m[4]  * m[7]
+	inv[8] = m[1]  * m[7]  * m[12] - m[1]  * m[8]  * m[11] - m[5]  * m[3]  * m[12] + m[5]  * m[4]  * m[11] + m[9]  * m[3]  * m[8]  - m[9]  * m[4]  * m[7]
+	inv[12] = -m[1]  * m[6]  * m[12] + m[1]  * m[8]  * m[10] + m[5]  * m[2]  * m[12] - m[5]  * m[4]  * m[10] - m[9]  * m[2]  * m[8]  + m[9]  * m[4]  * m[6]
+	inv[16] = m[1]  * m[6]  * m[11] - m[1]  * m[7]  * m[10] - m[5]  * m[2]  * m[11] + m[5]  * m[3]  * m[10] + m[9]  * m[2]  * m[7]  - m[9]  * m[3]  * m[6]
+	local det = m[1] * inv[1] + m[2] * inv[5] + m[3] * inv[9] + m[4] * inv[13]
+	if math.abs(det) < EPSILON then return nil end
+	local invDet = 1 / det
+	for i = 1, 16 do
+		inv[i] *= invDet
+	end
+	return inv
+end
+
+function MathUtils.tensorRank1OuterProduct(a: {number}, b: {number}): {{number}}
+	local res = {}
+	for i = 1, #a do
+		res[i] = {}
+		for j = 1, #b do
+			res[i][j] = a[i] * b[j]
+		end
+	end
+	return res
+end
+
+function MathUtils.rungeKutta4Array(y: {number}, t: number, dt: number, f: (number, {number}) -> {number}): {number}
+	local k1 = f(t, y)
+	local y2 = {}
+	for i = 1, #y do y2[i] = y[i] + k1[i] * dt * 0.5 end
+	local k2 = f(t + dt * 0.5, y2)
+	local y3 = {}
+	for i = 1, #y do y3[i] = y[i] + k2[i] * dt * 0.5 end
+	local k3 = f(t + dt * 0.5, y3)
+	local y4 = {}
+	for i = 1, #y do y4[i] = y[i] + k3[i] * dt end
+	local k4 = f(t + dt, y4)
+	local res = {}
+	for i = 1, #y do
+		res[i] = y[i] + (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]) * (dt / 6)
+	end
+	return res
+end
+
+function MathUtils.derivativeCentral(f: (number) -> number, x: number, h: number?): number
+	local step = h or 1e-5
+	return (f(x + step) - f(x - step)) / (2 * step)
+end
+
+function MathUtils.derivativeSecond(f: (number) -> number, x: number, h: number?): number
+	local step = h or 1e-5
+	return (f(x + step) - 2 * f(x) + f(x - step)) / (step * step)
+end
+
+function MathUtils.gradientCentral(f: ({number}) -> number, x: {number}, h: number?): {number}
+	local step = h or 1e-5
+	local grad = {}
+	for i = 1, #x do
+		local old = x[i]
+		x[i] = old + step
+		local fPlus = f(x)
+		x[i] = old - step
+		local fMinus = f(x)
+		x[i] = old
+		grad[i] = (fPlus - fMinus) / (2 * step)
+	end
+	return grad
+end
+
+function MathUtils.jacobianMatrix(f: ({number}) -> {number}, x: {number}, h: number?): {{number}}
+	local step = h or 1e-5
+	local jac = {}
+	local baseVal = f(x)
+	local m = #baseVal
+	for j = 1, m do jac[j] = {} end
+	for i = 1, #x do
+		local old = x[i]
+		x[i] = old + step
+		local fPlus = f(x)
+		x[i] = old - step
+		local fMinus = f(x)
+		x[i] = old
+		for j = 1, m do
+			jac[j][i] = (fPlus[j] - fMinus[j]) / (2 * step)
+		end
+	end
+	return jac
+end
+
+function MathUtils.hessianMatrix(f: ({number}) -> number, x: {number}, h: number?): {{number}}
+	local step = h or 1e-4
+	local n = #x
+	local H = {}
+	for i = 1, n do
+		H[i] = {}
+		local oldI = x[i]
+		for j = 1, n do
+			if i == j then
+				x[i] = oldI + step
+				local fPlus = f(x)
+				x[i] = oldI - step
+				local fMinus = f(x)
+				x[i] = oldI
+				H[i][i] = (fPlus - 2 * f(x) + fMinus) / (step * step)
+			else
+				local oldJ = x[j]
+				x[i] = oldI + step; x[j] = oldJ + step
+				local fPP = f(x)
+				x[i] = oldI - step; x[j] = oldJ + step
+				local fMP = f(x)
+				x[i] = oldI + step; x[j] = oldJ - step
+				local fPM = f(x)
+				x[i] = oldI - step; x[j] = oldJ - step
+				local fMM = f(x)
+				x[i] = oldI; x[j] = oldJ
+				H[i][j] = (fPP - fMP - fPM + fMM) / (4 * step * step)
+			end
+		end
+	end
+	return H
+end
+
+function MathUtils.statisticsSkewness(data: {number}): number
+	local n = #data
+	if n < 3 then return 0 end
+	local mean = MathUtils.mean(data)
+	local m2 = 0
+	local m3 = 0
+	for _, v in ipairs(data) do
+		local dev = v - mean
+		m2 += dev * dev
+		m3 += dev * dev * dev
+	end
+	m2 /= n
+	m3 /= n
+	if m2 < EPSILON then return 0 end
+	return m3 / (m2 ^ 1.5)
+end
+
+function MathUtils.shannonEntropy(probabilities: {number}): number
+	local entropy = 0
+	for _, p in ipairs(probabilities) do
+		if p > 0 then
+			entropy -= p * math.log(p, 2)
+		end
+	end
+	return entropy
+end
+
+function MathUtils.giniCoefficient(data: {number}): number
+	local n = #data
+	if n == 0 then return 0 end
+	local sorted = {}
+	for i, v in ipairs(data) do sorted[i] = v end
+	table.sort(sorted)
+	local sum = 0
+	for i, v in ipairs(sorted) do
+		sum += v
+	end
+	if sum == 0 then return 0 end
+	local gini = 0
+	for i, v in ipairs(sorted) do
+		gini += (2 * i - n - 1) * v
+	end
+	return gini / (n * sum)
+end
+
+function MathUtils.chebyshevDistance(p1: {number}, p2: {number}): number
+	local maxDiff = 0
+	for i = 1, #p1 do
+		local diff = math.abs(p1[i] - p2[i])
+		if diff > maxDiff then maxDiff = diff end
+	end
+	return maxDiff
+end
+
+function MathUtils.minkowskiDistance(p1: {number}, p2: {number}, p: number): number
+	local sum = 0
+	for i = 1, #p1 do
+		sum += math.abs(p1[i] - p2[i]) ^ p
+	end
+	return sum ^ (1 / p)
+end
+
+function MathUtils.cosineSimilarity(p1: {number}, p2: {number}): number
+	local dot = 0
+	local mag1 = 0
+	local mag2 = 0
+	for i = 1, #p1 do
+		dot += p1[i] * p2[i]
+		mag1 += p1[i] * p1[i]
+		mag2 += p2[i] * p2[i]
+	end
+	if mag1 < EPSILON or mag2 < EPSILON then return 0 end
+	return dot / (math.sqrt(mag1) * math.sqrt(mag2))
+end
+
+function MathUtils.jaccardIndex(setA: {[any]: boolean}, setB: {[any]: boolean}): number
+	local intersection = 0
+	local union = 0
+	for k in pairs(setA) do
+		union += 1
+		if setB[k] then intersection += 1 end
+	end
+	for k in pairs(setB) do
+		if not setA[k] then union += 1 end
+	end
+	if union == 0 then return 1 end
+	return intersection / union
+end
+
+function MathUtils.pearsonCorrelation(x: {number}, y: {number}): number
+	local n = #x
+	if n ~= #y or n == 0 then return 0 end
+	local sumX, sumY, sumX2, sumY2, sumXY = 0, 0, 0, 0, 0
+	for i = 1, n do
+		sumX += x[i]
+		sumY += y[i]
+		sumX2 += x[i] * x[i]
+		sumY2 += y[i] * y[i]
+		sumXY += x[i] * y[i]
+	end
+	local num = n * sumXY - sumX * sumY
+	local den = math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY))
+	if den < EPSILON then return 0 end
+	return num / den
+end
+
+function MathUtils.spearmanRankCorrelation(x: {number}, y: {number}): number
+	local n = #x
+	if n ~= #y or n == 0 then return 0 end
+	type DataPoint = {val: number, idx: number}
+
+	local function rankData(data: {number}): {number}
+		local indexed: {DataPoint} = {}
+		for i, v in ipairs(data) do 
+			table.insert(indexed, {val = v, idx = i}) 
+		end
+		table.sort(indexed, function(a: DataPoint, b: DataPoint) 
+			return a.val < b.val 
+		end)
+
+		local ranks = {}
+		for r, item in ipairs(indexed) do 
+			ranks[item.idx] = r 
+		end
+		return ranks
+	end
+
+	local rankX = rankData(x)
+	local rankY = rankData(y)
+
+	local d2Sum = 0
+	for i = 1, n do
+		local d = rankX[i] - rankY[i]
+		d2Sum += d * d
+	end
+
+	return 1 - (6 * d2Sum) / (n * (n * n - 1))
+end
+
+
+function MathUtils.simplexNoise2D(x: number, y: number, seed: number?): number
+	local F2 = 0.5 * (math.sqrt(3) - 1)
+	local G2 = (3 - math.sqrt(3)) / 6
+	local s = (x + y) * F2
+	local i = math.floor(x + s)
+	local j = math.floor(y + s)
+	local t = (i + j) * G2
+	local X0 = i - t
+	local Y0 = j - t
+	local x0 = x - X0
+	local y0 = y - Y0
+	local i1, j1
+	if x0 > y0 then
+		i1, j1 = 1, 0
+	else
+		i1, j1 = 0, 1
+	end
+	local x1 = x0 - i1 + G2
+	local y1 = y0 - j1 + G2
+	local x2 = x0 - 1 + 2 * G2
+	local y2 = y0 - 1 + 2 * G2
+	local hashSeed = seed or 0
+	
+	local function grad(hash: number, x: number, y: number): number
+		local h = bit32.band(hash, 7)
+		local u = if h < 4 then x else y
+		local v = if h < 4 then y else x
+		local resU = if bit32.band(h, 1) ~= 0 then -u else u
+		local resV = if bit32.band(h, 2) ~= 0 then -2 * v else 2 * v
+
+		return resU + resV
+	end
+	
+	local n0, n1, n2 = 0, 0, 0
+	local t0 = 0.5 - x0 * x0 - y0 * y0
+	if t0 > 0 then
+		t0 *= t0
+		local h0 = math.floor(MathUtils.hashToUnit01(i + j * 100 + hashSeed) * 255)
+		n0 = t0 * t0 * grad(h0, x0, y0)
+	end
+	local t1 = 0.5 - x1 * x1 - y1 * y1
+	if t1 > 0 then
+		t1 *= t1
+		local h1 = math.floor(MathUtils.hashToUnit01(i + i1 + (j + j1) * 100 + hashSeed) * 255)
+		n1 = t1 * t1 * grad(h1, x1, y1)
+	end
+	local t2 = 0.5 - x2 * x2 - y2 * y2
+	if t2 > 0 then
+		t2 *= t2
+		local h2 = math.floor(MathUtils.hashToUnit01(i + 1 + (j + 1) * 100 + hashSeed) * 255)
+		n2 = t2 * t2 * grad(h2, x2, y2)
+	end
+	return 70 * (n0 + n1 + n2)
+end
+
+function MathUtils.simplexNoise3D(x: number, y: number, z: number, seed: number?): number
+	local F3 = 1 / 3
+	local G3 = 1 / 6
+	local s = (x + y + z) * F3
+	local i = math.floor(x + s)
+	local j = math.floor(y + s)
+	local k = math.floor(z + s)
+	local t = (i + j + k) * G3
+	local X0 = i - t
+	local Y0 = j - t
+	local Z0 = k - t
+	local x0 = x - X0
+	local y0 = y - Y0
+	local z0 = z - Z0
+	local i1, j1, k1, i2, j2, k2
+	if x0 >= y0 then
+		if y0 >= z0 then
+			i1, j1, k1, i2, j2, k2 = 1, 0, 0, 1, 1, 0
+		elseif x0 >= z0 then
+			i1, j1, k1, i2, j2, k2 = 1, 0, 0, 1, 0, 1
+		else
+			i1, j1, k1, i2, j2, k2 = 0, 0, 1, 1, 0, 1
+		end
+	else
+		if y0 < z0 then
+			i1, j1, k1, i2, j2, k2 = 0, 0, 1, 0, 1, 1
+		elseif x0 < z0 then
+			i1, j1, k1, i2, j2, k2 = 0, 1, 0, 0, 1, 1
+		else
+			i1, j1, k1, i2, j2, k2 = 0, 1, 0, 1, 1, 0
+		end
+	end
+	local x1 = x0 - i1 + G3
+	local y1 = y0 - j1 + G3
+	local z1 = z0 - k1 + G3
+	local x2 = x0 - i2 + 2 * G3
+	local y2 = y0 - j2 + 2 * G3
+	local z2 = z0 - k2 + 2 * G3
+	local x3 = x0 - 1 + 3 * G3
+	local y3 = y0 - 1 + 3 * G3
+	local z3 = z0 - 1 + 3 * G3
+	local hashSeed = seed or 0
+	
+	local function grad(hash: number, x: number, y: number, z: number): number
+		local h: number = bit32.band(hash, 15)
+		local u: number = if h < 8 then x else y
+		local v: number = if h < 4 then y elseif h == 12 or h == 14 then x else z
+		return (if bit32.band(h, 1) ~= 0 then -u else u) + (if bit32.band(h, 2) ~= 0 then -v else v)
+	end
+
+	local function calcN(dx: number, dy: number, dz: number, di: number, dj: number, dk: number, i: number, j: number, k: number, hashSeed: number): number
+		local t: number = 0.6 - dx * dx - dy * dy - dz * dz
+		if t < 0 then return 0 end
+		t *= t
+		local h: number = math.floor(MathUtils.hashToUnit01(i + di + (j + dj) * 100 + (k + dk) * 10000 + hashSeed) * 255)
+		return t * t * grad(h, dx, dy, dz)
+	end
+
+	local n0: number = calcN(x0, y0, z0, 0, 0, 0, i, j, k, hashSeed)
+	local n1: number = calcN(x1, y1, z1, i1, j1, k1, i, j, k, hashSeed)
+	local n2: number = calcN(x2, y2, z2, i2, j2, k2, i, j, k, hashSeed)
+	local n3: number = calcN(x3, y3, z3, 1, 1, 1, i, j, k, hashSeed)
+	return 32 * (n0 + n1 + n2 + n3)
+end
+
+function MathUtils.generateLSystem(axiom: string, rules: {[string]: string}, iterations: number): string
+	local result = axiom
+	for _ = 1, iterations do
+		local nextResult = ""
+		for i = 1, #result do
+			local char = string.sub(result, i, i)
+			nextResult ..= rules[char] or char
+		end
+		result = nextResult
+	end
+	return result
+end
+
+export type BSPNode = {
+	x: number, y: number, w: number, h: number,
+	left: BSPNode?, right: BSPNode?, room: {x: number, y: number, w: number, h: number}?
+}
+
+function MathUtils.generateBSPDungeon(width: number, height: number, minRoomSize: number, iterations: number, seed: number?): BSPNode
+	local s: number = seed or 0
+	local root: BSPNode = {x = 1, y = 1, w = width, h = height, left = nil, right = nil, room = nil}
+	local leaves: {BSPNode} = {root}
+	for i: number = 1, iterations do
+		local newLeaves: {BSPNode} = {}
+		for _, leaf: BSPNode in ipairs(leaves) do
+			if leaf.left or leaf.right then
+				table.insert(newLeaves, leaf)
+				continue
+			end
+			local splitH: boolean = MathUtils.hashToUnit01(leaf.x + leaf.y * 100 + i + s) > 0.5
+			if leaf.w > leaf.h and leaf.w / leaf.h >= 1.25 then splitH = false end
+			if leaf.h > leaf.w and leaf.h / leaf.w >= 1.25 then splitH = true end
+			local max: number = (if splitH then leaf.h else leaf.w) - minRoomSize
+			if max <= minRoomSize then
+				table.insert(newLeaves, leaf)
+				continue
+			end
+			local split: number = minRoomSize + math.floor(MathUtils.hashToUnit01(leaf.x + leaf.y * 100 + i * 2 + s) * (max - minRoomSize))
+			if splitH then
+				leaf.left = {x = leaf.x, y = leaf.y, w = leaf.w, h = split, left = nil, right = nil, room = nil}
+				leaf.right = {x = leaf.x, y = leaf.y + split, w = leaf.w, h = leaf.h - split, left = nil, right = nil, room = nil}
+			else
+				leaf.left = {x = leaf.x, y = leaf.y, w = split, h = leaf.h, left = nil, right = nil, room = nil}
+				leaf.right = {x = leaf.x + split, y = leaf.y, w = leaf.w - split, h = leaf.h, left = nil, right = nil, room = nil}
+			end
+			if leaf.left then table.insert(newLeaves, leaf.left) end
+			if leaf.right then table.insert(newLeaves, leaf.right) end
+		end
+		leaves = newLeaves
+	end
+	local function createRooms(node: BSPNode): ()
+		if node.left and node.right then
+			createRooms(node.left)
+			createRooms(node.right)
+		else
+			local rw: number = minRoomSize + math.floor(MathUtils.hashToUnit01(node.x * 3 + s) * (node.w - minRoomSize))
+			local rh: number = minRoomSize + math.floor(MathUtils.hashToUnit01(node.y * 3 + s) * (node.h - minRoomSize))
+			local rx: number = node.x + math.floor(MathUtils.hashToUnit01(node.x * 5 + s) * (node.w - rw))
+			local ry: number = node.y + math.floor(MathUtils.hashToUnit01(node.y * 5 + s) * (node.h - rh))
+			node.room = {x = rx, y = ry, w = rw, h = rh}
+		end
+	end
+	createRooms(root)
+	return root
+end
+
+export type NavMeshPolygon = {
+	vertices: {Vector3},
+	center: Vector3,
+	neighbors: {number},
+}
+
+function MathUtils.navMeshAStar(startPoly: number, endPoly: number, polygons: {NavMeshPolygon}): {number}?
+	local openSet = {[startPoly] = true}
+	local closedSet = {}
+	local gScore = {[startPoly] = 0}
+	local fScore = {[startPoly] = (polygons[startPoly].center - polygons[endPoly].center).Magnitude}
+	local cameFrom = {}
+
+	while true do
+		local current = nil
+		local minF = math.huge
+		for polyId in pairs(openSet) do
+			if (fScore[polyId] or math.huge) < minF then
+				minF = fScore[polyId]
+				current = polyId
+			end
+		end
+		if not current then break end
+		if current == endPoly then
+			local path = {current}
+			while cameFrom[current] do
+				current = cameFrom[current]
+				table.insert(path, 1, current)
+			end
+			return path
+		end
+		openSet[current] = nil
+		closedSet[current] = true
+		for _, neighbor in ipairs(polygons[current].neighbors) do
+			if closedSet[neighbor] then continue end
+			local tentativeG = gScore[current] + (polygons[current].center - polygons[neighbor].center).Magnitude
+			if not openSet[neighbor] or tentativeG < (gScore[neighbor] or math.huge) then
+				cameFrom[neighbor] = current
+				gScore[neighbor] = tentativeG
+				fScore[neighbor] = tentativeG + (polygons[neighbor].center - polygons[endPoly].center).Magnitude
+				openSet[neighbor] = true
+			end
+		end
+	end
+	return nil
+end
+
+function MathUtils.funnelAlgorithm(portals: {{left: Vector3, right: Vector3}}, startPos: Vector3, endPos: Vector3): {Vector3}
+	local pts = {startPos}
+	local portalApex, portalLeft, portalRight = startPos, startPos, startPos
+	local apexIndex, leftIndex, rightIndex = 0, 0, 0
+	table.insert(portals, {left = endPos, right = endPos})
+	local i = 1
+	while i <= #portals do
+		local left = portals[i].left
+		local right = portals[i].right
+		if MathUtils.triangleArea2D(Vector2.new(portalApex.X, portalApex.Z), Vector2.new(portalRight.X, portalRight.Z), Vector2.new(right.X, right.Z)) <= 0 then
+			if portalApex == portalRight or MathUtils.triangleArea2D(Vector2.new(portalApex.X, portalApex.Z), Vector2.new(portalLeft.X, portalLeft.Z), Vector2.new(right.X, right.Z)) > 0 then
+				portalRight = right
+				rightIndex = i
+			else
+				table.insert(pts, portalLeft)
+				portalApex = portalLeft
+				apexIndex = leftIndex
+				portalLeft = portalApex
+				portalRight = portalApex
+				leftIndex = apexIndex
+				rightIndex = apexIndex
+				i = apexIndex
+				continue
+			end
+		end
+		if MathUtils.triangleArea2D(Vector2.new(portalApex.X, portalApex.Z), Vector2.new(portalLeft.X, portalLeft.Z), Vector2.new(left.X, left.Z)) >= 0 then
+			if portalApex == portalLeft or MathUtils.triangleArea2D(Vector2.new(portalApex.X, portalApex.Z), Vector2.new(portalRight.X, portalRight.Z), Vector2.new(left.X, left.Z)) < 0 then
+				portalLeft = left
+				leftIndex = i
+			else
+				table.insert(pts, portalRight)
+				portalApex = portalRight
+				apexIndex = rightIndex
+				portalLeft = portalApex
+				portalRight = portalApex
+				leftIndex = apexIndex
+				rightIndex = apexIndex
+				i = apexIndex
+				continue
+			end
+		end
+		i += 1
+	end
+	table.insert(pts, endPos)
+	return pts
+end
+
+export type IKJoint = {
+	position: Vector3,
+	axis: Vector3,
+	angle: number,
+	length: number,
+}
+
+function MathUtils.ikJacobianTranspose(joints: {IKJoint}, target: Vector3, iterations: number, stepSize: number)
+	for _ = 1, iterations do
+		local endEffector = joints[#joints].position
+		local err = target - endEffector
+		if err.Magnitude < 0.01 then break end
+		local jacobian = {}
+		for i = 1, #joints - 1 do
+			local r = endEffector - joints[i].position
+			local col = joints[i].axis:Cross(r)
+			jacobian[i] = col
+		end
+		for i = 1, #joints - 1 do
+			local deltaAngle = jacobian[i]:Dot(err) * stepSize
+			joints[i].angle += deltaAngle
+		end
+		local pos = joints[1].position
+		for i = 1, #joints - 1 do
+			local rot = CFrame.fromAxisAngle(joints[i].axis, joints[i].angle)
+			local dir = rot * Vector3.new(joints[i].length, 0, 0)
+			pos += dir
+			joints[i+1].position = pos
+		end
+	end
+end
+
+export type PBDParticle = {
+	position: Vector3,
+	predicted: Vector3,
+	velocity: Vector3,
+	mass: number,
+	invMass: number,
+}
+
+export type PBDDistanceConstraint = {
+	p1: number,
+	p2: number,
+	restLength: number,
+	stiffness: number,
+}
+
+function MathUtils.pbdStep(
+	particles: {PBDParticle},
+	constraints: {PBDDistanceConstraint},
+	gravity: Vector3,
+	dt: number,
+	iterations: number
+)
+	for _, p in ipairs(particles) do
+		if p.invMass > 0 then
+			p.velocity += gravity * dt
+			p.predicted = p.position + p.velocity * dt
+		else
+			p.predicted = p.position
+		end
+	end
+	for _ = 1, iterations do
+		for _, c in ipairs(constraints) do
+			local p1 = particles[c.p1]
+			local p2 = particles[c.p2]
+			local dir = p1.predicted - p2.predicted
+			local dist = dir.Magnitude
+			if dist > EPSILON then
+				local wSum = p1.invMass + p2.invMass
+				if wSum > EPSILON then
+					local corr = dir * ((dist - c.restLength) / dist) * c.stiffness
+					p1.predicted -= corr * (p1.invMass / wSum)
+					p2.predicted += corr * (p2.invMass / wSum)
+				end
+			end
+		end
+	end
+	for _, p in ipairs(particles) do
+		if p.invMass > 0 then
+			p.velocity = (p.predicted - p.position) / dt
+			p.position = p.predicted
+		end
+	end
+end
+
+function MathUtils.pbdBendingConstraint(
+	p1: PBDParticle, p2: PBDParticle, p3: PBDParticle, p4: PBDParticle,
+	restAngle: number, stiffness: number
+)
+	local n1 = (p2.predicted - p1.predicted):Cross(p3.predicted - p1.predicted).Unit
+	local n2 = (p2.predicted - p1.predicted):Cross(p4.predicted - p1.predicted).Unit
+	local d = n1:Dot(n2)
+	local angle = math.acos(math.clamp(d, -1, 1))
+	if math.abs(angle - restAngle) > EPSILON then
+		local wSum = p1.invMass + p2.invMass + p3.invMass + p4.invMass
+		if wSum > EPSILON then
+			local corr = (angle - restAngle) * stiffness
+			p1.predicted += n1 * (corr * p1.invMass / wSum)
+			p2.predicted += n2 * (corr * p2.invMass / wSum)
+			p3.predicted -= n1 * (corr * p3.invMass / wSum)
+			p4.predicted -= n2 * (corr * p4.invMass / wSum)
+		end
+	end
+end
+
+function MathUtils.marchingCubesEvaluate(grid: {{{number}}}, threshold: number): {{Vector3}}
+	local triangles = {}
+	for z = 1, #grid - 1 do
+		for y = 1, #grid[z] - 1 do
+			for x = 1, #grid[z][y] - 1 do
+				local v0 = grid[z][y][x]
+				local v1 = grid[z][y][x+1]
+				local v2 = grid[z][y+1][x+1]
+				local v3 = grid[z][y+1][x]
+				local v4 = grid[z+1][y][x]
+				local v5 = grid[z+1][y][x+1]
+				local v6 = grid[z+1][y+1][x+1]
+				local v7 = grid[z+1][y+1][x]
+				local cubeIndex = 0
+				if v0 < threshold then cubeIndex += 1 end
+				if v1 < threshold then cubeIndex += 2 end
+				if v2 < threshold then cubeIndex += 4 end
+				if v3 < threshold then cubeIndex += 8 end
+				if v4 < threshold then cubeIndex += 16 end
+				if v5 < threshold then cubeIndex += 32 end
+				if v6 < threshold then cubeIndex += 64 end
+				if v7 < threshold then cubeIndex += 128 end
+				if cubeIndex > 0 and cubeIndex < 255 then
+					table.insert(triangles, {Vector3.new(x,y,z), Vector3.new(x+1,y,z), Vector3.new(x,y+1,z)})
+				end
+			end
+		end
+	end
+	return triangles
 end
 
 return MathUtils
